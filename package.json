@@ -1,0 +1,25 @@
+{
+  "name": "my-first-playwright-project",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "npx playwright test",
+    "test:headed": "npx playwright test --headed",
+    "test:ui": "npx playwright test --ui",
+    "test:debug": "npx playwright test --debug",
+    "test:frames": "npx playwright test tests/e2e/frames.spec.ts",
+    "test:dialogs": "npx playwright test tests/e2e/dialogs.spec.ts",
+    "test:files": "npx playwright test tests/e2e/file-operations.spec.ts",
+    "test:keyboard": "npx playwright test tests/e2e/keyboard-mouse.spec.ts",
+    "test:multitab": "npx playwright test tests/e2e/multi-tab.spec.ts",
+    "report": "npx playwright show-report"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "@playwright/test": "^1.57.0",
+    "@types/node": "^25.0.3"
+  }
+}
