@@ -1,0 +1,11 @@
+# Sample text file for upload testing
+This is a test file created for Playwright training.
+Session 03: Advanced UI Interactions
+
+Content:
+- Line 1: Sample data
+- Line 2: More sample data
+- Line 3: Testing file upload functionality
+
+Created by: Playwright Training
+Date: 2026

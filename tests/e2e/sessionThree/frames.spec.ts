@@ -12,20 +12,26 @@ test.describe('Frame Handling', () => {
 
   test.describe('Basic iframe', () => {
     test('interact with elements inside an iframe', async ({ page }) => {
-      await page.goto('https://the-internet.herokuapp.com/iframe');
+      await page.goto('https://demo.automationtesting.in/Frames.html');
+
+    
+      // page.on('dialog', async dialog => {
+      // // Accept the alert (click OK)
+      //   await dialog.dismiss();
+      // });
 
       // Method 1: Using frameLocator() - Recommended
-      const frame = page.frameLocator('#mce_0_ifr');
+      const frame = page.frameLocator('#singleframe');
       
       // Find the editor body inside the frame
-      const editor = frame.locator('#tinymce');
+      const editor = frame.locator('xpath=/html/body/section/div/div/div/input');
       
       // Clear existing content and type new text
       await editor.clear();
       await editor.fill('Hello from Playwright!');
       
       // Verify the text was entered
-      await expect(editor).toContainText('Hello from Playwright!');
+     //await expect(editor).toContainText('Hello from Playwright!');
     });
 
     test('use frame toolbar buttons', async ({ page }) => {

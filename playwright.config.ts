@@ -16,13 +16,17 @@ export default defineConfig({
   
   // Global test settings
   use: {
+
+    // Required for downloads
+    acceptDownloads: true,
+
     // Headless mode: true = no browser window, false = see browser
     headless: false,
     
     // Slow down browser actions (in milliseconds) - useful for watching tests
     // Set to 0 for maximum speed, increase to slow down (e.g., 500, 1000)
     launchOptions: {
-      slowMo: 0,
+      slowMo: 1000,
     },
     
     // Screenshot on failure

@@ -15,7 +15,7 @@
     "report": "npx playwright show-report"
   },
   "keywords": [],
-  "author": "",
+  "author": "Dhanushka Akila Samaranayake",
   "license": "ISC",
   "description": "",
   "devDependencies": {
