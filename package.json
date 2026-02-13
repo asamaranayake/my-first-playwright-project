@@ -12,6 +12,9 @@
     "test:files": "npx playwright test tests/e2e/file-operations.spec.ts",
     "test:keyboard": "npx playwright test tests/e2e/keyboard-mouse.spec.ts",
     "test:multitab": "npx playwright test tests/e2e/multi-tab.spec.ts",
+    "test:api": "npx playwright test tests/e2e/api/users-basic.spec.ts tests/e2e/api/users-crud.spec.ts tests/e2e/api/users-validation.spec.ts",
+    "test:combined": "npx playwright test tests/e2e/api/combined.spec.ts",
+    "test:report": "npx playwright test --reporter=html && npx playwright show-report",
     "report": "npx playwright show-report"
   },
   "keywords": [],

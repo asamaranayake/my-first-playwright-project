@@ -37,10 +37,27 @@ export default defineConfig({
     
     // Navigation timeout
     navigationTimeout: 15000,
+
+    // Base URL for API requests (reqres.in)
+    baseURL: 'https://reqres.in',
+
+    // Extra HTTP headers sent with every request
+    extraHTTPHeaders: {
+      'Accept': 'application/json',
+      'x-api-key': 'reqres-free-v1',
+    },
   },
 
   // Browser configuration
   projects: [
+
+    {
+      name: 'api-tests',
+      testMatch: /.*\/(users-basic|users-crud|users-validation)\.spec\.ts/,
+      use: {
+        // API-only tests don't need a browser
+      },
+    },
     {
       name: "chromium",
       use: { ...devices["Desktop Chrome"] },

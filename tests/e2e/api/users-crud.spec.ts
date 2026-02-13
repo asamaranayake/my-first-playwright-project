@@ -1,5 +1,5 @@
 import { test, expect } from '../../../fixtures/api-fixtures';
-import testData from '../../../tests/user.json';
+import testData from '../.././test-data/users.json';
 
 
 /**
