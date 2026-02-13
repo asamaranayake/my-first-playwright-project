@@ -13,7 +13,6 @@ test.describe('Users API - Basic Operations', () => {
   test('GET - should list users from page 1', async ({ request }) => {
     // Send GET request (uses baseURL from config)
     const response = await request.get('/api/users?page=1');
-
     // Level 1: Status code validation
     expect(response.status()).toBe(200);
     expect(response.ok()).toBeTruthy();
