@@ -8,7 +8,7 @@
  * Trainer: Dhanushka Akila Samaranayake
  */
 
-import { test, expect } from '../../fixtures/mock-fixtures';
+import { test, expect } from 'fixtures/mock-fixtures';
 
 const FRUITS_API_PATTERN = '*/**/api/v1/fruits';
 

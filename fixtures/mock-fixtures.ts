@@ -79,6 +79,7 @@ export const test = base.extend<{ mockHelper: MockHelper }>({
         const filePath = path.resolve(
           __dirname,
           '..',
+          'tests',
           'test-data',
           'mock-responses',
           fileName,

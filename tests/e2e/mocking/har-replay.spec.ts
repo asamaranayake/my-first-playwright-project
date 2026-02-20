@@ -27,12 +27,12 @@ test.describe('HAR Recording & Replay', () => {
    *
    * Command:  npx playwright test -g "record"
    * Or CLI:   npx playwright open --save-har=hars/fruits.har \
-   *             --save-har-glob="**/api/**" \
+   *             --save-har-glob="**\/api\/**" \
    *             https://demo.playwright.dev/api-mocking
    */
-  test.skip('record fruits API to HAR file', async ({ page }) => {
+  test('record fruits API to HAR file', async ({ page }) => {
     // update: true  →  Playwright RECORDS rather than replays
-    await page.routeFromHAR(path.join(HAR_DIR, 'fruits.har'), {
+    await page.routeFromHAR(path.join(HAR_DIR, 'demo.playwright.dev.har'), {
       url: FRUITS_API_PATTERN,
       update: true,
     });
@@ -53,9 +53,9 @@ test.describe('HAR Recording & Replay', () => {
    * ⚠️  Requires the HAR file from Step 1 to exist.
    *     A pre-recorded sample is shipped in hars/fruits-sample.har
    */
-  test.skip('replay fruits API from HAR file', async ({ page }) => {
+  test('replay fruits API from HAR file', async ({ page }) => {
     // update: false (default) → replay mode
-    await page.routeFromHAR(path.join(HAR_DIR, 'fruits-sample.har'), {
+    await page.routeFromHAR(path.join(HAR_DIR, 'demo.playwright.dev.har'), {
       url: FRUITS_API_PATTERN,
       update: false,
     });
@@ -69,10 +69,10 @@ test.describe('HAR Recording & Replay', () => {
   /**
    * Demonstrate routeFromHAR at the context level with notFound option.
    */
-  test.skip('context-level HAR replay with notFound fallback', async ({
+  test('context-level HAR replay with notFound fallback', async ({
     context,
   }) => {
-    await context.routeFromHAR(path.join(HAR_DIR, 'fruits-sample.har'), {
+    await context.routeFromHAR(path.join(HAR_DIR, 'demo.playwright.dev.har'), {
       url: '**/api/**',
       notFound: 'fallback', // fall through to next handler if not in HAR
     });

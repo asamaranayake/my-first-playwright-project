@@ -7,7 +7,7 @@
  * Trainer: Dhanushka Akila Samaranayake
  */
 
-import { test, expect } from '../../fixtures/mock-fixtures';
+import { test, expect } from 'fixtures/mock-fixtures';
 
 // ---------------------------------------------------------------------------
 // Test Suite: Block Resources with route.abort()
