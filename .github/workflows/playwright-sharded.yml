@@ -11,9 +11,9 @@
 name: Playwright Tests (Sharded)
 on:
   push:
-    branches: [ main, master ]
+    branches: [ feature/session_08_CICD ]
   pull_request:
-    branches: [ main, master ]
+    branches: [ feature/session_08_CICD ]
 
 jobs:
   # ─────────────────────────────────────────────────
