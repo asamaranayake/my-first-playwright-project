@@ -3,44 +3,41 @@
 // ============================================================
 // Pre-requisites:
 //   - Docker installed and running on Jenkins agent
-//   - Docker daemon accessible to Jenkins user
+//   - Docker Pipeline plugin properly installed
 //   - HTML Publisher plugin for report viewing
 // ============================================================
 
 pipeline {
-    agent {
-        docker {
-            image 'mcr.microsoft.com/playwright:v1.49.0-noble'
-            args '--ipc=host'  // Recommended for Chromium stability
-        }
-    }
+    agent none
 
     environment {
         CI = 'true'
     }
 
     stages {
-        stage('Checkout') {
-            steps {
-                checkout scm
+        stage('Playwright Tests') {
+            agent {
+                dockerContainer {
+                    image 'mcr.microsoft.com/playwright:v1.49.0-noble'
+                    args '--ipc=host'
+                }
             }
-        }
-
-        stage('Install Dependencies') {
             steps {
-                sh 'npm install'
-            }
-        }
+                stage('Checkout') {
+                    checkout scm
+                }
 
-        stage('Run Smoke Tests') {
-            steps {
-                sh 'npx playwright test --grep @smoke'
-            }
-        }
+                stage('Install Dependencies') {
+                    sh 'npm install'
+                }
 
-        stage('Run Full Test Suite') {
-            steps {
-                sh 'npx playwright test'
+                stage('Run Smoke Tests') {
+                    sh 'npx playwright test --grep @smoke'
+                }
+
+                stage('Run Full Test Suite') {
+                    sh 'npx playwright test'
+                }
             }
         }
     }
