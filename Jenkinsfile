@@ -20,6 +20,22 @@ pipeline {
             }
         }
 
+        stage('Setup Node.js') {
+            steps {
+                sh '''
+                    # Check if Node.js is installed
+                    if ! command -v node &> /dev/null; then
+                        echo "Node.js not found. Installing Node.js..."
+                        curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
+                        apt-get install -y nodejs
+                    fi
+                    # Verify Node.js and npm versions
+                    node --version
+                    npm --version
+                '''
+            }
+        }
+
         stage('Install Dependencies') {
             steps {
                 sh 'npm install'
