@@ -43,7 +43,7 @@ export default defineConfig({
     //baseURL: 'https://reqres.in',
     
     // Base URL for the demo mocking site
-    baseURL: 'https://demo.playwright.dev/api-mocking',
+    baseURL: 'https://www.saucedemo.com',
 
     // Extra HTTP headers sent with every request
     extraHTTPHeaders: {
@@ -54,30 +54,63 @@ export default defineConfig({
 
   // Browser configuration
   projects: [
+    // ──────────────────────────────────────────────
+    // SETUP PROJECTS: Run first to create auth state
+    // ──────────────────────────────────────────────
     {
-      name: 'mocking-tests',
-      testMatch: /.*\/(mock-api-responses|block-resources|modify-responses|network-events)\.spec\.ts/,
-      use: {
-        browserName: 'chromium',
-      },
+      name: 'admin-setup',
+      testMatch: /.*admin\.setup\.ts/,
     },
     {
-      name: 'har-tests',
-      testMatch: /.*\/har-replay\.spec\.ts/,
-      use: {
-        browserName: 'chromium',
-      },
+      name: 'user-setup',
+      testMatch: /.*user\.setup\.ts/,
     },
+
+    // ──────────────────────────────────────────────
+    // TEST PROJECTS: Use saved auth state
+    // ──────────────────────────────────────────────
+
+    // Admin tests — uses admin.json auth state
     {
-      name: 'api-tests',
-      testMatch: /.*\/(users-basic|users-crud|users-validation)\.spec\.ts/,
+      name: 'admin-tests',
       use: {
-        // API-only tests don't need a browser
+        ...devices['Desktop Chrome'],
+        storageState: 'playwright/.auth/admin.json',
       },
+      dependencies: ['admin-setup'],
+      testMatch: /.*admin.*\.spec\.ts/,
     },
+
+    // User tests — uses user.json auth state
     {
-      name: "chromium",
-      use: { ...devices["Desktop Chrome"] },
+      name: 'user-tests',
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: 'playwright/.auth/user.json',
+      },
+      dependencies: ['user-setup'],
+      testMatch: /.*user.*\.spec\.ts/,
+    },
+
+    // Login page tests — NO auth (clean state)
+    {
+      name: 'login-tests',
+      use: {
+        ...devices['Desktop Chrome'],
+        // Start with empty state — no cookies, no localStorage
+        storageState: { cookies: [], origins: [] },
+      },
+      testMatch: /.*login.*\.spec\.ts/,
+    },
+
+    // Multi-role tests — depend on BOTH setups
+    {
+      name: 'multi-role-tests',
+      use: {
+        ...devices['Desktop Chrome'],
+      },
+      dependencies: ['admin-setup', 'user-setup'],
+      testMatch: /.*multi-role.*\.spec\.ts/,
     },
   ],
 });

@@ -19,6 +19,13 @@
     "test:har": "npx playwright test tests/e2e/mocking/har-replay.spec.ts",
     "test:combined": "npx playwright test tests/e2e/api/combined.spec.ts",
     "test:report": "npx playwright test --reporter=html && npx playwright show-report",
+    "test:setup": "npx playwright test --project=admin-setup --project=user-setup",
+    "test:admin": "npx playwright test --project=admin-tests",
+    "test:user": "npx playwright test --project=user-tests",
+    "test:login": "npx playwright test --project=login-tests",
+    "test:multi-role": "npx playwright test --project=multi-role-tests",
+    "test:report": "npx playwright test --reporter=html && npx playwright show-report",
+    "clean:auth": "rm -rf playwright/.auth/*.json"
     "report": "npx playwright show-report"
   },
   "keywords": [],

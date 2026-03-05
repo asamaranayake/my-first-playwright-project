@@ -1,33 +1,42 @@
-# Session 06: Network Mocking - Complete Sample Project
+# Session 07: Authentication & Storage State — Complete Sample Project
 
-> **Session:** 06 - Network Mocking with Playwright  
-> **Trainer:** Dhanushka Akila Samaranayake  
-> **Demo Site:** https://demo.playwright.dev/api-mocking  
+## 📋 Overview
+
+This project demonstrates Playwright's **authentication and storage state** capabilities. Instead of logging in before every test, we authenticate **once** and reuse the saved state across all tests, dramatically reducing test execution time.
+
+**Target Application:** [SauceDemo](https://www.saucedemo.com/)
 
 ---
 
 ## 📁 Project Structure
 
 ```
-session-06-complete/
+session-07-complete/
+├── src/
+│   └── pages/                           # Page Object Models
+│       ├── LoginPage.ts                      # Login page interactions
+│       └── InventoryPage.ts                  # Inventory/products page interactions
 ├── tests/
 │   └── e2e/
-│       └── mocking/
-│           ├── mock-api-responses.spec.ts   # route.fulfill() demos
-│           ├── block-resources.spec.ts      # route.abort() demos
-│           ├── modify-responses.spec.ts     # route.fetch() + route.fulfill() / route.continue()
-│           ├── har-replay.spec.ts           # HAR recording & replay
-│           └── network-events.spec.ts       # Network event listeners & waitForResponse
+│       ├── auth/                        # 🔐 Auth setup files (run first)
+│       │   ├── admin.setup.ts                # Login as admin → saves admin.json
+│       │   └── user.setup.ts                 # Login as user → saves user.json
+│       └── ui/                          # 🧪 Test files (use saved auth)
+│           ├── admin-inventory.spec.ts       # Tests running as admin (6 tests)
+│           ├── user-inventory.spec.ts        # Tests running as user (6 tests)
+│           ├── login-page.spec.ts            # Login page tests with NO auth (8 tests)
+│           ├── multi-role-interaction.spec.ts # Both roles in single tests (4 tests)
+│           └── multi-role-pom.spec.ts        # POM + auth fixture tests (7 tests)
 ├── fixtures/
-│   └── mock-fixtures.ts                     # Custom MockHelper fixture
-├── test-data/
-│   └── mock-responses/
-│       └── fruits.json                      # Sample mock JSON data
-├── hars/                                    # Directory for HAR recordings
-│   └── .gitkeep
-├── playwright.config.ts
+│   ├── auth-fixtures.ts                 # adminPage & userPage fixtures
+│   └── auth-pom-fixtures.ts             # adminInventory & userInventory POM fixtures
+├── playwright/
+│   └── .auth/                           # 💾 Saved auth states (git-ignored)
+│       └── .gitkeep
+├── playwright.config.ts                 # Config with 6 projects
 ├── package.json
 ├── tsconfig.json
+├── .gitignore
 └── README.md
 ```
 
@@ -36,75 +45,120 @@ session-06-complete/
 ## 🚀 Quick Start
 
 ```bash
-# Install dependencies
+# 1. Install dependencies
 npm install
 
-# Install Playwright browsers
+# 2. Install Playwright browsers
 npx playwright install
 
-# Run ALL tests
+# 3. Create the auth directory
+mkdir -p playwright/.auth
+
+# 4. Run all tests (setup projects run automatically first)
+npm test
+```
+
+---
+
+## 📦 Test Commands
+
+| Command | Description |
+|---------|-------------|
+| `npm test` | Run all tests (setup + all projects) |
+| `npm run test:setup` | Run only the auth setup files |
+| `npm run test:admin` | Run admin role tests only |
+| `npm run test:user` | Run standard user tests only |
+| `npm run test:login` | Run login page tests (no auth) |
+| `npm run test:multi-role` | Run multi-role interaction tests |
+| `npm run test:report` | Generate and open HTML report |
+| `npm run clean:auth` | Delete saved auth state files |
+
+---
+
+## 🏗️ Project Architecture
+
+### Projects in `playwright.config.ts`
+
+| Project | Type | Auth State | Dependencies |
+|---------|------|------------|--------------|
+| `admin-setup` | Setup | Generates `admin.json` | None |
+| `user-setup` | Setup | Generates `user.json` | None |
+| `admin-tests` | Tests | Uses `admin.json` | `admin-setup` |
+| `user-tests` | Tests | Uses `user.json` | `user-setup` |
+| `login-tests` | Tests | Empty (no auth) | None |
+| `multi-role-tests` | Tests | Creates own contexts | `admin-setup`, `user-setup` |
+
+### Execution Flow
+
+```
 npx playwright test
+        │
+   ┌────┴────┐
+   ▼         ▼
+admin.setup  user.setup      ← Setup projects run first (in parallel)
+   │         │
+   ▼         ▼
+admin.json   user.json       ← Auth states saved to disk
+   │         │
+   ▼         ▼
+admin-tests  user-tests      ← Run after their setup completes
+             │
+             ▼
+        login-tests           ← Runs independently (no setup needed)
+             │
+             ▼
+       multi-role-tests       ← Runs after both setups complete
 ```
 
 ---
 
-## 🧪 Run Specific Test Suites
+## 🔑 Key Concepts
 
-```bash
-# Mock API responses (route.fulfill)
-npm run test:mock
+### 1. Storage State
 
-# Block resources (route.abort)
-npm run test:block
+`browserContext.storageState()` saves **cookies** and **localStorage** to a JSON file. When loaded into a new context via `storageState: 'path/to/file.json'`, the browser starts in that authenticated state.
 
-# Modify real responses (route.fetch + route.fulfill / route.continue)
-npm run test:modify
+### 2. Setup Projects
 
-# HAR recording & replay
-npm run test:har
+Setup projects run **before** test projects. They are configured with `testMatch: /.*\.setup\.ts/` and referenced via `dependencies: ['setup-name']`.
 
-# Network events & monitoring
-npm run test:events
+### 3. Role-Based Testing
 
-# View HTML report after tests
-npm run test:report
-```
+Different user roles (admin, standard user) get separate setup files and storage state files. Each test project loads the appropriate auth state.
 
----
+### 4. Skipping Auth
 
-## 📋 Test Files Overview
+Use `test.use({ storageState: { cookies: [], origins: [] } })` or configure a project with empty state to test pages that should be accessed without authentication.
 
-| File | Technique | Key APIs |
-|------|-----------|----------|
-| `mock-api-responses.spec.ts` | Replace responses with mock data | `page.route()`, `route.fulfill()` |
-| `block-resources.spec.ts` | Block images, CSS, analytics | `route.abort()`, `resourceType()` |
-| `modify-responses.spec.ts` | Intercept & modify real responses | `route.fetch()`, `route.continue()` |
-| `har-replay.spec.ts` | Record & replay network traffic | `page.routeFromHAR()` |
-| `network-events.spec.ts` | Monitor network activity | `page.on('request')`, `waitForResponse()` |
+### 5. Auth Fixtures
+
+Custom fixtures (`adminPage`, `userPage`) create separate BrowserContexts with different auth states, allowing multi-role testing within a single test.
 
 ---
 
-## 🔑 Key Concepts Demonstrated
+## 🔐 SauceDemo Users
 
-1. **`route.fulfill()`** – Return completely fake responses (JSON, text, status codes, headers)
-2. **`route.abort()`** – Block unwanted resources (images, fonts, analytics)
-3. **`route.continue()`** – Modify outgoing requests (add/remove headers, change URL)
-4. **`route.fetch()` + `route.fulfill()`** – Intercept real responses, modify them, return the modified version
-5. **HAR Recording** – Save all network traffic to a JSON file for later replay
-6. **Network Events** – Monitor requests, responses, and failures using event listeners
-7. **`waitForResponse()`** – Synchronise with specific API calls
+| Username | Password | Description |
+|----------|----------|-------------|
+| `standard_user` | `secret_sauce` | Normal user (used as admin) |
+| `performance_glitch_user` | `secret_sauce` | Slow load times (used as standard user) |
+| `locked_out_user` | `secret_sauce` | Cannot login |
+| `problem_user` | `secret_sauce` | UI glitches |
+| `error_user` | `secret_sauce` | Server errors |
+| `visual_user` | `secret_sauce` | Visual bugs |
 
 ---
 
 ## 💡 Tips
 
-- Always set up `page.route()` **before** `page.goto()` or the action that triggers the request
-- A route handler **must** call `fulfill()`, `abort()`, or `continue()` — otherwise the request hangs
-- Use `page.route()` for single-page interception, `context.route()` for all pages
-- HAR files are written when the browser context closes
-- Use `test.skip` for HAR recording tests once you have a saved recording
+- **Never commit auth files** — `playwright/.auth/` is in `.gitignore`
+- **Setup runs once per test run** — Even if you run multiple test projects
+- **Auth files can expire** — Use `npm run clean:auth` to force re-authentication
+- **Performance:** API-based auth is faster than UI login for setup
+- **Session storage** is NOT saved by `storageState` — handle it manually if needed
 
 ---
 
-**Created by:** Dhanushka Akila Samaranayake  
-**Last Updated:** February 2026
+## 📖 Session Notes
+
+See the [Session 07 Lecture Notes](../../LectureNotes/Session07_Authentication/lecture.md) for comprehensive coverage of authentication patterns, exercises, and quizzes.
