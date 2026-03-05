@@ -13,7 +13,7 @@ test.describe('Login Page', () => {
   });
 
   // ==========================================
-  // SUCCESSFUL LOGIN TESTS
+  // SUCCESSFUL LOGIN TESTS new
   // ==========================================
 
   test('should login successfully with standard_user credentials', async ({ page }) => {
