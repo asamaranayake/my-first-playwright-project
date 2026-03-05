@@ -1,22 +1,16 @@
 // ============================================================
-// Jenkins Pipeline: Playwright Tests with Docker
+// Jenkins Pipeline: Playwright Tests (Local, No Docker)
 // ============================================================
 // Pre-requisites:
-//   - Docker plugin installed on Jenkins
+//   - Node.js installed on Jenkins agent
 //   - HTML Publisher plugin for report viewing
 // ============================================================
 
 pipeline {
-    agent {
-        docker {
-            image 'mcr.microsoft.com/playwright:v1.49.0-noble'
-            args '--ipc=host'  // Recommended for Chromium
-        }
-    }
+    agent any
 
     environment {
         CI = 'true'
-        HOME = '/root'
     }
 
     stages {
@@ -28,7 +22,13 @@ pipeline {
 
         stage('Install Dependencies') {
             steps {
-                sh 'npm ci'
+                sh 'npm install'
+            }
+        }
+
+        stage('Install Playwright Browsers') {
+            steps {
+                sh 'npx playwright install --with-deps'
             }
         }
 

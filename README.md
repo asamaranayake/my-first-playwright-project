@@ -1,164 +1,195 @@
-# Session 07: Authentication & Storage State — Complete Sample Project
+# Session 08: CI/CD Integration — Sample Project
 
-## 📋 Overview
-
-This project demonstrates Playwright's **authentication and storage state** capabilities. Instead of logging in before every test, we authenticate **once** and reuse the saved state across all tests, dramatically reducing test execution time.
-
-**Target Application:** [SauceDemo](https://www.saucedemo.com/)
+> **Complete working example** demonstrating Playwright CI/CD integration with GitHub Actions, Azure DevOps, Jenkins, and Docker.
 
 ---
 
 ## 📁 Project Structure
 
 ```
-session-07-complete/
-├── src/
-│   └── pages/                           # Page Object Models
-│       ├── LoginPage.ts                      # Login page interactions
-│       └── InventoryPage.ts                  # Inventory/products page interactions
+session-08-complete/
+├── .github/
+│   └── workflows/
+│       ├── playwright.yml            # Basic GitHub Actions workflow
+│       └── playwright-sharded.yml    # Sharded workflow with report merging
+├── reporters/
+│   └── summary-reporter.ts          # Custom reporter example
 ├── tests/
-│   └── e2e/
-│       ├── auth/                        # 🔐 Auth setup files (run first)
-│       │   ├── admin.setup.ts                # Login as admin → saves admin.json
-│       │   └── user.setup.ts                 # Login as user → saves user.json
-│       └── ui/                          # 🧪 Test files (use saved auth)
-│           ├── admin-inventory.spec.ts       # Tests running as admin (6 tests)
-│           ├── user-inventory.spec.ts        # Tests running as user (6 tests)
-│           ├── login-page.spec.ts            # Login page tests with NO auth (8 tests)
-│           ├── multi-role-interaction.spec.ts # Both roles in single tests (4 tests)
-│           └── multi-role-pom.spec.ts        # POM + auth fixture tests (7 tests)
-├── fixtures/
-│   ├── auth-fixtures.ts                 # adminPage & userPage fixtures
-│   └── auth-pom-fixtures.ts             # adminInventory & userInventory POM fixtures
-├── playwright/
-│   └── .auth/                           # 💾 Saved auth states (git-ignored)
-│       └── .gitkeep
-├── playwright.config.ts                 # Config with 6 projects
-├── package.json
-├── tsconfig.json
-├── .gitignore
-└── README.md
+│   ├── login.spec.ts                # Login page tests (@smoke)
+│   ├── inventory.spec.ts            # Product listing & cart tests
+│   ├── checkout.spec.ts             # Checkout flow tests (@smoke)
+│   └── retry-demo.spec.ts           # Retry & worker index demonstrations
+├── .env.example                     # Environment variables template
+├── .gitignore                       # Git ignore rules
+├── azure-pipelines.yml              # Azure DevOps pipeline
+├── docker-compose.yml               # Docker Compose for local CI
+├── Dockerfile                       # Custom Playwright Docker image
+├── Jenkinsfile                      # Jenkins pipeline
+├── package.json                     # NPM scripts & dependencies
+├── playwright.config.ts             # CI-optimized Playwright config
+├── README.md                        # This file
+└── tsconfig.json                    # TypeScript config
 ```
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Getting Started
 
+### Prerequisites
+- Node.js 18+ (LTS recommended)
+- Docker (optional, for container exercises)
+
+### Installation
 ```bash
-# 1. Install dependencies
-npm install
+npm ci
+npx playwright install --with-deps
+```
 
-# 2. Install Playwright browsers
-npx playwright install
-
-# 3. Create the auth directory
-mkdir -p playwright/.auth
-
-# 4. Run all tests (setup projects run automatically first)
+### Run Tests
+```bash
+# Run all tests (local mode)
 npm test
+
+# Run in CI mode (dot reporter, 1 worker, 2 retries)
+npm run test:ci
+
+# Run headed (see the browser)
+npm run test:headed
+
+# Debug mode
+npm run test:debug
 ```
 
 ---
 
-## 📦 Test Commands
+## 🧪 Available NPM Scripts
 
-| Command | Description |
-|---------|-------------|
-| `npm test` | Run all tests (setup + all projects) |
-| `npm run test:setup` | Run only the auth setup files |
-| `npm run test:admin` | Run admin role tests only |
-| `npm run test:user` | Run standard user tests only |
-| `npm run test:login` | Run login page tests (no auth) |
-| `npm run test:multi-role` | Run multi-role interaction tests |
-| `npm run test:report` | Generate and open HTML report |
-| `npm run clean:auth` | Delete saved auth state files |
+| Script | Description |
+|--------|-------------|
+| `npm test` | Run all tests with default config |
+| `npm run test:ci` | Run with CI environment variable set |
+| `npm run test:headed` | Run with browser visible |
+| `npm run test:debug` | Run in debug mode |
+| `npm run test:shard:1` | Run shard 1 of 4 |
+| `npm run test:shard:2` | Run shard 2 of 4 |
+| `npm run test:shard:3` | Run shard 3 of 4 |
+| `npm run test:shard:4` | Run shard 4 of 4 |
+| `npm run test:retries` | Run with 3 retries |
+| `npm run report` | Open HTML report |
+| `npm run report:merge` | Merge blob reports to HTML |
+| `npm run docker:test` | Run tests in official Docker image |
+| `npm run docker:build` | Build custom Docker image |
+| `npm run docker:run` | Run tests in custom Docker image |
 
 ---
 
-## 🏗️ Project Architecture
+## 🏗️ CI/CD Configurations
 
-### Projects in `playwright.config.ts`
+### GitHub Actions
+- **Basic workflow:** `.github/workflows/playwright.yml` — Runs on push/PR, uploads HTML report
+- **Sharded workflow:** `.github/workflows/playwright-sharded.yml` — 4 parallel shards with blob report merging
 
-| Project | Type | Auth State | Dependencies |
-|---------|------|------------|--------------|
-| `admin-setup` | Setup | Generates `admin.json` | None |
-| `user-setup` | Setup | Generates `user.json` | None |
-| `admin-tests` | Tests | Uses `admin.json` | `admin-setup` |
-| `user-tests` | Tests | Uses `user.json` | `user-setup` |
-| `login-tests` | Tests | Empty (no auth) | None |
-| `multi-role-tests` | Tests | Creates own contexts | `admin-setup`, `user-setup` |
+### Azure DevOps
+- **Pipeline:** `azure-pipelines.yml` — Runs tests, publishes JUnit results, uploads HTML report
 
-### Execution Flow
+### Jenkins
+- **Pipeline:** `Jenkinsfile` — Runs in Docker container with HTML Publisher
 
+### Docker
+- **Dockerfile:** Build a custom self-contained test runner
+- **docker-compose.yml:** Simulate CI locally with volume-mapped reports
+
+---
+
+## 📊 Reporter Configuration
+
+The `playwright.config.ts` uses environment-aware reporter selection:
+
+| Environment | Reporters |
+|-------------|-----------|
+| **Local** | `list` (terminal) + `html` (visual) |
+| **CI** | `dot` (minimal) + `blob` (for merging) + `junit` (CI integration) |
+
+### Custom Reporter
+See `reporters/summary-reporter.ts` for a custom reporter that produces execution summaries.
+
+To use it:
+```typescript
+// In playwright.config.ts
+reporter: [['./reporters/summary-reporter.ts']],
 ```
-npx playwright test
-        │
-   ┌────┴────┐
-   ▼         ▼
-admin.setup  user.setup      ← Setup projects run first (in parallel)
-   │         │
-   ▼         ▼
-admin.json   user.json       ← Auth states saved to disk
-   │         │
-   ▼         ▼
-admin-tests  user-tests      ← Run after their setup completes
-             │
-             ▼
-        login-tests           ← Runs independently (no setup needed)
-             │
-             ▼
-       multi-role-tests       ← Runs after both setups complete
+
+---
+
+## 🐳 Docker Usage
+
+### Using the official Playwright image:
+```bash
+docker run --rm --init --ipc=host \
+  -v $(pwd):/app -w /app \
+  mcr.microsoft.com/playwright:v1.49.0-noble \
+  bash -c "npm ci && npx playwright test"
+```
+
+### Using Docker Compose:
+```bash
+docker compose up --build
+```
+
+### Building a custom image:
+```bash
+docker build -t playwright-session08 .
+docker run --rm --init --ipc=host playwright-session08
 ```
 
 ---
 
-## 🔑 Key Concepts
+## 🔪 Test Sharding
 
-### 1. Storage State
+### Run locally:
+```bash
+# Split into 4 shards and run one
+npx playwright test --shard=1/4
 
-`browserContext.storageState()` saves **cookies** and **localStorage** to a JSON file. When loaded into a new context via `storageState: 'path/to/file.json'`, the browser starts in that authenticated state.
+# Or use npm scripts
+npm run test:shard:1
+npm run test:shard:2
+npm run test:shard:3
+npm run test:shard:4
+```
 
-### 2. Setup Projects
+### Merge blob reports:
+```bash
+# Collect all blob reports into one folder
+mkdir all-blob-reports
+cp blob-report/* all-blob-reports/
 
-Setup projects run **before** test projects. They are configured with `testMatch: /.*\.setup\.ts/` and referenced via `dependencies: ['setup-name']`.
-
-### 3. Role-Based Testing
-
-Different user roles (admin, standard user) get separate setup files and storage state files. Each test project loads the appropriate auth state.
-
-### 4. Skipping Auth
-
-Use `test.use({ storageState: { cookies: [], origins: [] } })` or configure a project with empty state to test pages that should be accessed without authentication.
-
-### 5. Auth Fixtures
-
-Custom fixtures (`adminPage`, `userPage`) create separate BrowserContexts with different auth states, allowing multi-role testing within a single test.
-
----
-
-## 🔐 SauceDemo Users
-
-| Username | Password | Description |
-|----------|----------|-------------|
-| `standard_user` | `secret_sauce` | Normal user (used as admin) |
-| `performance_glitch_user` | `secret_sauce` | Slow load times (used as standard user) |
-| `locked_out_user` | `secret_sauce` | Cannot login |
-| `problem_user` | `secret_sauce` | UI glitches |
-| `error_user` | `secret_sauce` | Server errors |
-| `visual_user` | `secret_sauce` | Visual bugs |
+# Merge into HTML
+npx playwright merge-reports --reporter html ./all-blob-reports
+```
 
 ---
 
-## 💡 Tips
+## 🔑 Environment Variables
 
-- **Never commit auth files** — `playwright/.auth/` is in `.gitignore`
-- **Setup runs once per test run** — Even if you run multiple test projects
-- **Auth files can expire** — Use `npm run clean:auth` to force re-authentication
-- **Performance:** API-based auth is faster than UI login for setup
-- **Session storage** is NOT saved by `storageState` — handle it manually if needed
+Copy the example and fill in values:
+```bash
+cp .env.example .env
+```
+
+| Variable | Purpose | Default |
+|----------|---------|---------|
+| `BASE_URL` | Application URL | `https://www.saucedemo.com` |
+| `CI` | Enables CI mode | (set by CI providers) |
+| `STANDARD_USER` | Test username | `standard_user` |
+| `STANDARD_PASSWORD` | Test password | `secret_sauce` |
 
 ---
 
-## 📖 Session Notes
+## 📚 Related Resources
 
-See the [Session 07 Lecture Notes](../../LectureNotes/Session07_Authentication/lecture.md) for comprehensive coverage of authentication patterns, exercises, and quizzes.
+- [Lecture Notes: Session 08 — CI/CD Integration](../../LectureNotes/Session08_CICD_Integration/lecture.md)
+- [Playwright CI Documentation](https://playwright.dev/docs/ci)
+- [Playwright Docker Documentation](https://playwright.dev/docs/docker)
+- [Playwright Reporters](https://playwright.dev/docs/test-reporters)
+- [Playwright Sharding](https://playwright.dev/docs/test-sharding)
