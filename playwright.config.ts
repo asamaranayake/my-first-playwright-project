@@ -44,6 +44,8 @@ export default defineConfig({
         ['dot'],
         ['blob'],
         ['junit', { outputFile: 'test-results/junit-results.xml' }],
+        ['html', { open: 'on-failure', outputFolder: 'playwright-report' }],
+        ['github'],
       ]
     : [
         ['list'],
