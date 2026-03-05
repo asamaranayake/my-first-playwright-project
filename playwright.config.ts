@@ -1,116 +1,75 @@
-import path from "path";
-import { defineConfig, devices } from "@playwright/test";
+import { defineConfig, devices } from '@playwright/test';
+import dotenv from 'dotenv';
+import path from 'path';
+
+/**
+ * Session 08: CI/CD Integration — Playwright Configuration
+ *
+ * This config demonstrates CI-optimized settings:
+ * - Different reporters for CI vs local
+ * - Worker count tuned for CI stability
+ * - Retries enabled on CI for flaky test handling
+ * - Fail-fast with maxFailures on CI
+ * - fullyParallel for balanced shard distribution
+ */
+
+// Load .env file for local development
+dotenv.config({ path: path.resolve(__dirname, '.env') });
 
 export default defineConfig({
-  testDir: path.resolve(__dirname, "tests"),
+  testDir: './tests',
 
-  // Test execution speed settings
-  timeout: 30000, // 30 seconds per test
-  fullyParallel: true, // Run tests in parallel (faster)
-  workers: 3, // Number of parallel workers (adjust based on your CPU)
+  /* Run tests in files in parallel */
+  fullyParallel: true,
 
-  // Retry failed tests
-  retries: 1,
+  /* Fail the build on CI if you accidentally left test.only in the source code */
+  forbidOnly: !!process.env.CI,
 
-  // Reporter
-  reporter: "html",
+  /* Retry on CI only — catches flaky tests */
+  retries: process.env.CI ? 2 : 0,
 
-  // Global test settings
+  /* Limit workers on CI for stability; auto-detect locally */
+  workers: process.env.CI ? 1 : undefined,
+
+  /* Stop after N failures on CI to save CI minutes */
+  maxFailures: process.env.CI ? 10 : undefined,
+
+  /**
+   * Reporter configuration:
+   * - CI: blob (for shard merging) + dot (minimal output) + junit (CI integration)
+   * - Local: list (verbose) + html (visual report)
+   */
+  reporter: process.env.CI
+    ? [
+        ['dot'],
+        ['blob'],
+        ['junit', { outputFile: 'test-results/junit-results.xml' }],
+      ]
+    : [
+        ['list'],
+        ['html', { open: 'on-failure', outputFolder: 'playwright-report' }],
+      ],
+
+  /* Shared settings for all projects */
   use: {
+    /* Base URL from environment or default */
+    baseURL: process.env.BASE_URL || 'https://www.saucedemo.com',
 
-    // Required for downloads
-    acceptDownloads: true,
+    /* Collect trace on first retry for debugging CI failures */
+    trace: 'on-first-retry',
 
-    // Headless mode: true = no browser window, false = see browser
-    headless: false,
+    /* Take screenshots only on failure to save space */
+    screenshot: 'only-on-failure',
 
-    // Slow down browser actions (in milliseconds) - useful for watching tests
-    // Set to 0 for maximum speed, increase to slow down (e.g., 500, 1000)
-    launchOptions: {
-      slowMo: 1000,
-    },
-
-    // Screenshot on failure
-    screenshot: "only-on-failure",
-
-    // Video on failure
-    video: "retain-on-failure",
-
-    // Navigation timeout
-    navigationTimeout: 15000,
-
-    // Base URL for API requests (reqres.in)
-    //baseURL: 'https://reqres.in',
-    
-    // Base URL for the demo mocking site
-    baseURL: 'https://www.saucedemo.com',
-
-    // Extra HTTP headers sent with every request
-    extraHTTPHeaders: {
-      'Accept': 'application/json',
-      'x-api-key': 'reqres-free-v1',
-    },
+    /* Record video only on first retry */
+    video: 'on-first-retry',
   },
 
-  // Browser configuration
+  /* Configure projects for different browsers */
   projects: [
-    // ──────────────────────────────────────────────
-    // SETUP PROJECTS: Run first to create auth state
-    // ──────────────────────────────────────────────
     {
-      name: 'admin-setup',
-      testMatch: /.*admin\.setup\.ts/,
-    },
-    {
-      name: 'user-setup',
-      testMatch: /.*user\.setup\.ts/,
-    },
-
-    // ──────────────────────────────────────────────
-    // TEST PROJECTS: Use saved auth state
-    // ──────────────────────────────────────────────
-
-    // Admin tests — uses admin.json auth state
-    {
-      name: 'admin-tests',
-      use: {
-        ...devices['Desktop Chrome'],
-        storageState: 'playwright/.auth/admin.json',
-      },
-      dependencies: ['admin-setup'],
-      testMatch: /.*admin.*\.spec\.ts/,
-    },
-
-    // User tests — uses user.json auth state
-    {
-      name: 'user-tests',
-      use: {
-        ...devices['Desktop Chrome'],
-        storageState: 'playwright/.auth/user.json',
-      },
-      dependencies: ['user-setup'],
-      testMatch: /.*user.*\.spec\.ts/,
-    },
-
-    // Login page tests — NO auth (clean state)
-    {
-      name: 'login-tests',
-      use: {
-        ...devices['Desktop Chrome'],
-        // Start with empty state — no cookies, no localStorage
-        storageState: { cookies: [], origins: [] },
-      },
-      testMatch: /.*login.*\.spec\.ts/,
-    },
-
-    // Multi-role tests — depend on BOTH setups
-    {
-      name: 'multi-role-tests',
-      use: {
-        ...devices['Desktop Chrome'],
-      },
-      dependencies: ['admin-setup', 'user-setup'],
-      testMatch: /.*multi-role.*\.spec\.ts/,
-    },
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'], headless: true },
+    }
   ],
 });
