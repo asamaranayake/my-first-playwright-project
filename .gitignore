@@ -1,9 +1,26 @@
 
 # Playwright
-node_modules/
-/test-results/
-/playwright-report/
-/blob-report/
 /playwright/.cache/
 /playwright/.auth/
 package-lock.json
+# Playwright auth state files — never commit credentials!
+playwright/.auth/
+
+
+# Dependencies
+node_modules/
+
+# Playwright
+playwright-report/
+blob-report/
+all-blob-reports/
+test-results/
+
+# Environment
+.env
+
+# Build
+dist/
+
+# Docker
+.dockerignore

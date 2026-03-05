@@ -18,7 +18,8 @@
     "paths": {
       "@pages/*": ["src/pages/*"],
       "@fixtures/*": ["fixtures/*"],
-      "@test-data/*": ["tests/test-data/*"]
+      "@test-data/*": ["tests/test-data/*"],
+      "@reporters/*": ["reporters/*"]
     }
   },
   "include": [

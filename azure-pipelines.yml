@@ -1,0 +1,51 @@
+# ============================================================
+# Azure DevOps Pipeline: Playwright Tests
+# ============================================================
+# This pipeline runs Playwright tests on Azure Pipelines with:
+#   - JUnit report publishing for Azure Test Results UI
+#   - HTML report as pipeline artifact
+# ============================================================
+
+trigger:
+- main
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+- task: UseNode@1
+  inputs:
+    version: '22'
+  displayName: 'Install Node.js'
+
+- script: npm ci
+  displayName: 'Install dependencies'
+
+- script: npx playwright install --with-deps
+  displayName: 'Install Playwright browsers'
+
+- script: npx playwright test
+  displayName: 'Run Playwright tests'
+  env:
+    CI: 'true'
+
+# Publish JUnit results to Azure Test Results tab
+- task: PublishTestResults@2
+  displayName: 'Publish JUnit test results'
+  inputs:
+    searchFolder: 'test-results'
+    testResultsFormat: 'JUnit'
+    testResultsFiles: 'junit-results.xml'
+    mergeTestResults: true
+    failTaskOnFailedTests: true
+    testRunTitle: 'Playwright E2E Tests'
+  condition: succeededOrFailed()
+
+# Publish HTML report as pipeline artifact
+- task: PublishPipelineArtifact@1
+  displayName: 'Publish HTML report'
+  inputs:
+    targetPath: playwright-report
+    artifact: playwright-report
+    publishLocation: 'pipeline'
+  condition: succeededOrFailed()
