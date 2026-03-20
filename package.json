@@ -26,9 +26,24 @@
     "test:multi-role": "npx playwright test --project=multi-role-tests",
     "test:report": "npx playwright test --reporter=html && npx playwright show-report",
     "clean:auth": "rm -rf playwright/.auth/*.json",
-    "report": "npx playwright show-report"
+    "report": "npx playwright show-report",
+    "test:seed": "npx playwright test tests/seed.spec.ts",
+    "test:seed:headed": "npx playwright test tests/seed.spec.ts --headed",
+    "init:agents": "npx playwright init-agents --loop=vscode",
+    "cli:install": "npx @playwright/cli@latest install --skills",
+    "cli:open": "npx @playwright/cli@latest open",
+    "cli:help": "npx @playwright/cli@latest --help"
   },
-  "keywords": [],
+  "keywords": [
+    "playwright",
+    "agentic",
+    "test-agents",
+    "planner",
+    "generator",
+    "healer",
+    "cli",
+    "skills"
+  ],
   "author": "Dhanushka Akila Samaranayake",
   "license": "ISC",
   "description": "",
@@ -36,6 +51,5 @@
     "@playwright/test": "^1.57.0",
     "@types/node": "^25.3.0",
     "dotenv": "^16.3.1"
-
   }
 }
