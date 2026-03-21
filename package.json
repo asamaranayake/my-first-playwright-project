@@ -24,7 +24,6 @@
     "test:user": "npx playwright test --project=user-tests",
     "test:login": "npx playwright test --project=login-tests",
     "test:multi-role": "npx playwright test --project=multi-role-tests",
-    "test:report": "npx playwright test --reporter=html && npx playwright show-report",
     "clean:auth": "rm -rf playwright/.auth/*.json",
     "report": "npx playwright show-report",
     "test:seed": "npx playwright test tests/seed.spec.ts",
@@ -48,7 +47,7 @@
   "license": "ISC",
   "description": "",
   "devDependencies": {
-    "@playwright/test": "^1.57.0",
+    "@playwright/test": "^1.58.2",
     "@types/node": "^25.3.0",
     "dotenv": "^16.3.1"
   }
