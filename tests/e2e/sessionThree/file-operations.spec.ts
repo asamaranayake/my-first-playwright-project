@@ -7,8 +7,8 @@
  *            https://the-internet.herokuapp.com/download
  */
 import { test, expect } from '@playwright/test';
-import path from 'path';
-import fs from 'fs';
+import * as path from 'path';
+import * as fs from 'fs';
 
 test.describe('File Upload', () => {
   test.describe('Standard file input', () => {
@@ -16,7 +16,10 @@ test.describe('File Upload', () => {
       await page.goto('https://the-internet.herokuapp.com/upload');
 
       // Create a test file for upload
-      const testFilePath = path.join(__dirname, '../../test-data/uploads/sample.txt');
+     const testDir = path.join(__dirname,'/test-data/uploads/sample.txt');
+     console.log('Test file path:', testDir);
+     const testFilePath = path.join(testDir, 'sample.txt');
+     console.log('Full test file path:', testFilePath); 
       
       // Ensure test file exists
       if (!fs.existsSync(testFilePath)) {

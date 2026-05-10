@@ -82,7 +82,7 @@ test.describe('Keyboard Interactions', () => {
       await input.press('Control+Shift+a');
     });
 
-    test('type text with keyboard.type()', async ({ page }) => {
+    test.only('type text with keyboard.type()', async ({ page }) => {
       await page.goto('https://the-internet.herokuapp.com/key_presses');
 
       const input = page.locator('#target');

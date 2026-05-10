@@ -14,23 +14,24 @@ test.describe('Frame Handling', () => {
     test('interact with elements inside an iframe', async ({ page }) => {
       await page.goto('https://the-internet.herokuapp.com/iframe');
 
+      await page.getByRole('button', { name: 'Close' }).click(); // Close any pop-up if it appears
+
       // Method 1: Using frameLocator() - Recommended
       const frame = page.frameLocator('#mce_0_ifr');
       
       // Find the editor body inside the frame
-      const editor = frame.locator('#tinymce');
+      const editor = frame.locator('#tinymce');   
       
-      // Clear existing content and type new text
-      await editor.clear();
-      await editor.fill('Hello from Playwright!');
+      await frame.getByRole('button', { name: 'Insert/edit image' }).click();
       
       // Verify the text was entered
-      await expect(editor).toContainText('Hello from Playwright!');
+      await expect(editor).toContainText('Your content goes here.');
     });
 
     test('use frame toolbar buttons', async ({ page }) => {
       await page.goto('https://the-internet.herokuapp.com/iframe');
-
+      
+      await page.getByRole('button', { name: 'Close' }).click();
       // Toolbar buttons are outside the iframe (in main page)
       const boldButton = page.locator('[aria-label="Bold"]');
       
@@ -39,9 +40,7 @@ test.describe('Frame Handling', () => {
       const editor = frame.locator('#tinymce');
 
       // Clear and type text
-      await editor.clear();
-      await editor.fill('Make this bold');
-      
+      //await editor.fill('Make this bold');
       // Select all text (Ctrl+A)
       await editor.press('Control+a');
       

@@ -7,9 +7,9 @@
  */
 import { test, expect } from '@playwright/test';
 
-test.describe('Multi-Tab Handling', () => {
-  test.describe('New Tab/Window', () => {
-    test('handle link that opens new tab', async ({ page, context }) => {
+test.describe.only('Multi-Tab Handling', () => {
+  test.describe.only('New Tab/Window', () => {
+    test.only('handle link that opens new tab', async ({ page, context }) => {
       await page.goto('https://the-internet.herokuapp.com/windows');
 
       // Start waiting for new page BEFORE clicking

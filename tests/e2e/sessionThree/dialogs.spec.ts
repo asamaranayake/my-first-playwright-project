@@ -11,6 +11,8 @@ test.describe('Dialog Handling', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('https://the-internet.herokuapp.com/javascript_alerts');
   });
+  
+//test.describe.configure({ mode: 'serial' });
 
   test.describe('Alert Dialog', () => {
     test('handle simple alert', async ({ page }) => {

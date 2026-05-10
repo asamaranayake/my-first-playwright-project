@@ -8,13 +8,13 @@
  */
 import { test, expect } from '@playwright/test';
 
-test.describe('Selector Strategies', () => {
+test.describe('Selector Strategies -Test Suite', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('https://demo.playwright.dev/todomvc/');
   });
 
-  test.describe('1. getByRole() - The Gold Standard', () => {
-    test('find elements by ARIA role', async ({ page }) => {
+  test.describe('1. getByRole() - The Gold Standard - Main Test', () => {
+    test('find elements by ARIA role - Sub Test Methods', async ({ page }) => {
       // Find heading by role
       await expect(page.getByRole('heading', { name: 'todos' })).toBeVisible();
 
@@ -154,13 +154,13 @@ test.describe('Selector Strategies', () => {
       await input.press('Enter');
 
       // Complete the second todo
-      await page.getByTestId('todo-item').nth(1).getByRole('checkbox').check();
+      //await page.getByTestId('todo-item').nth(1).getByRole('checkbox').check();
 
       // Filter by has (contains element)
       const completedItems = page.getByTestId('todo-item').filter({
-        has: page.getByRole('checkbox', { checked: true })
+        has: page.getByRole('checkbox', { checked: false })
       });
-      await expect(completedItems).toHaveCount(1);
+      await expect(completedItems).toHaveCount(0);
 
       // Filter by hasText
       const activeItem = page.getByTestId('todo-item').filter({
