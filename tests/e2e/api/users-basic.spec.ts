@@ -1,4 +1,11 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../../../fixtures/api-fixtures';
+import { HttpStatusCodes } from '../../../src/api/HttpStatusCodes';
+import {
+  CreateUserResponse,
+  SingleUserResponse,
+  UpdateUserResponse,
+  UserListResponse,
+} from '../../../src/api/UsersAPI';
 
 /**
  * Session 05 - Part 1: Basic API Tests
@@ -10,15 +17,15 @@ test.describe('Users API - Basic Operations', () => {
 
   // ──────────────── GET Requests ────────────────
 
-  test('GET - should list users from page 1', async ({ request }) => {
-    // Send GET request (uses baseURL from config)
-    const response = await request.get('/api/users?page=1');
+  test('GET - should list users from page 1', async ({ usersAPI }) => {
+    const response = await usersAPI.getUsers(1);
+
     // Level 1: Status code validation
-    expect(response.status()).toBe(200);
+    expect(response.status()).toBe(HttpStatusCodes.OK);
     expect(response.ok()).toBeTruthy();
 
     // Level 2: Response structure validation
-    const body = await response.json();
+    const body = await usersAPI.getResponseBody<UserListResponse>(response);
     expect(body).toHaveProperty('page');
     expect(body).toHaveProperty('data');
     expect(body).toHaveProperty('total');
@@ -29,12 +36,12 @@ test.describe('Users API - Basic Operations', () => {
     expect(body.per_page).toBe(6);
   });
 
-  test('GET - should get a single user by ID', async ({ request }) => {
-    const response = await request.get('/api/users/2');
+  test('GET - should get a single user by ID', async ({ usersAPI }) => {
+    const response = await usersAPI.getUserById(2);
 
-    expect(response.status()).toBe(200);
+    expect(response.status()).toBe(HttpStatusCodes.OK);
 
-    const body = await response.json();
+    const body = await usersAPI.getResponseBody<SingleUserResponse>(response);
 
     // Verify user data structure
     expect(body.data).toHaveProperty('id');
@@ -48,46 +55,41 @@ test.describe('Users API - Basic Operations', () => {
     expect(body.data.email).toContain('@');
   });
 
-  test('GET - should return 404 for non-existent user', async ({ request }) => {
-    const response = await request.get('/api/users/99999');
+  test('GET - should return 404 for non-existent user', async ({ usersAPI }) => {
+    const response = await usersAPI.getUserById(99999);
 
     // 404 = Resource Not Found
-    expect(response.status()).toBe(404);
+    expect(response.status()).toBe(HttpStatusCodes.NOT_FOUND);
     expect(response.ok()).toBeFalsy();
 
     // Body should be empty object
-    const body = await response.json();
+    const body = await usersAPI.getResponseBody<Record<string, never>>(response);
     expect(Object.keys(body)).toHaveLength(0);
   });
 
-  test('GET - should support query parameters', async ({ request }) => {
-    // Using params option (cleaner than URL string)
-    const response = await request.get('/api/users', {
-      params: { page: 2 },
-    });
+  test('GET - should support query parameters', async ({ usersAPI }) => {
+    const response = await usersAPI.getUsers(2);
 
-    expect(response.status()).toBe(200);
+    expect(response.status()).toBe(HttpStatusCodes.OK);
 
-    const body = await response.json();
+    const body = await usersAPI.getResponseBody<UserListResponse>(response);
     expect(body.page).toBe(2);
   });
 
   // ──────────────── POST Requests ────────────────
 
-  test('POST - should create a new user', async ({ request }) => {
+  test('POST - should create a new user', async ({ usersAPI }) => {
     const newUser = {
       name: 'Akila Samaranayake',
       job: 'Senior SDET Engineer',
     };
 
-    const response = await request.post('/api/users', {
-      data: newUser,
-    });
+    const response = await usersAPI.createUser(newUser);
 
     // 201 = Created
-    expect(response.status()).toBe(201);
+    expect(response.status()).toBe(HttpStatusCodes.CREATED);
 
-    const body = await response.json();
+    const body = await usersAPI.getResponseBody<CreateUserResponse>(response);
 
     // Verify our data is in the response
     expect(body.name).toBe(newUser.name);
@@ -100,19 +102,17 @@ test.describe('Users API - Basic Operations', () => {
 
   // ──────────────── PUT Requests ────────────────
 
-  test('PUT - should fully update a user', async ({ request }) => {
+  test('PUT - should fully update a user', async ({ usersAPI }) => {
     const updatedData = {
       name: 'Updated User',
       job: 'Lead Engineer',
     };
 
-    const response = await request.put('/api/users/2', {
-      data: updatedData,
-    });
+    const response = await usersAPI.updateUser(2, updatedData);
 
-    expect(response.status()).toBe(200);
+    expect(response.status()).toBe(HttpStatusCodes.OK);
 
-    const body = await response.json();
+    const body = await usersAPI.getResponseBody<UpdateUserResponse>(response);
     expect(body.name).toBe(updatedData.name);
     expect(body.job).toBe(updatedData.job);
     expect(body.updatedAt).toBeTruthy();
@@ -120,35 +120,33 @@ test.describe('Users API - Basic Operations', () => {
 
   // ──────────────── PATCH Requests ────────────────
 
-  test('PATCH - should partially update a user', async ({ request }) => {
+  test('PATCH - should partially update a user', async ({ usersAPI }) => {
     const partialUpdate = {
       job: 'QA Architect', // Only updating the job
     };
 
-    const response = await request.patch('/api/users/2', {
-      data: partialUpdate,
-    });
+    const response = await usersAPI.patchUser(2, partialUpdate);
 
-    expect(response.status()).toBe(200);
+    expect(response.status()).toBe(HttpStatusCodes.OK);
 
-    const body = await response.json();
+    const body = await usersAPI.getResponseBody<UpdateUserResponse>(response);
     expect(body.job).toBe('QA Architect');
     expect(body.updatedAt).toBeTruthy();
   });
 
   // ──────────────── DELETE Requests ────────────────
 
-  test('DELETE - should remove a user', async ({ request }) => {
-    const response = await request.delete('/api/users/2');
+  test('DELETE - should remove a user', async ({ usersAPI }) => {
+    const response = await usersAPI.deleteUser(2);
 
     // 204 = No Content (successfully deleted, no body returned)
-    expect(response.status()).toBe(204);
+    expect(response.status()).toBe(HttpStatusCodes.NO_CONTENT);
   });
 
   // ──────────────── Response Details ────────────────
 
-  test('should inspect response headers', async ({ request }) => {
-    const response = await request.get('/api/users/2');
+  test('should inspect response headers', async ({ usersAPI }) => {
+    const response = await usersAPI.getUserById(2);
 
     // Check headers
     expect(response.headers()['content-type']).toContain('application/json');

@@ -1,4 +1,4 @@
-import { BaseAPI } from './BaseAPI';
+import { BaseAPI, RequestHeaders } from './BaseAPI';
 
 // ──────────────────────────────────────────────
 // TypeScript Interfaces for API Data Types
@@ -88,16 +88,16 @@ export class UsersAPI extends BaseAPI {
    * Get a paginated list of users
    * GET /api/users?page={page}
    */
-  async getUsers(page: number = 1) {
-    return await this.get(this.basePath, { page });
+  async getUsers(page: number = 1, headers?: RequestHeaders) {
+    return await this.get(this.basePath, { page }, headers);
   }
 
   /**
    * Get a single user by ID
    * GET /api/users/{id}
    */
-  async getUserById(id: number) {
-    return await this.get(`${this.basePath}/${id}`);
+  async getUserById(id: number, headers?: RequestHeaders) {
+    return await this.get(`${this.basePath}/${id}`, undefined, headers);
   }
 
   // ──────────────── CREATE Operations ────────────────
@@ -106,8 +106,8 @@ export class UsersAPI extends BaseAPI {
    * Create a new user
    * POST /api/users
    */
-  async createUser(payload: UserPayload) {
-    return await this.post(this.basePath, payload);
+  async createUser(payload: UserPayload, headers?: RequestHeaders) {
+    return await this.post(this.basePath, payload, headers);
   }
 
   // ──────────────── UPDATE Operations ────────────────
@@ -116,16 +116,20 @@ export class UsersAPI extends BaseAPI {
    * Fully update a user (all fields required)
    * PUT /api/users/{id}
    */
-  async updateUser(id: number, payload: UserPayload) {
-    return await this.put(`${this.basePath}/${id}`, payload);
+  async updateUser(id: number, payload: UserPayload, headers?: RequestHeaders) {
+    return await this.put(`${this.basePath}/${id}`, payload, headers);
   }
 
   /**
    * Partially update a user (only changed fields)
    * PATCH /api/users/{id}
    */
-  async patchUser(id: number, payload: Partial<UserPayload>) {
-    return await this.patch(`${this.basePath}/${id}`, payload);
+  async patchUser(
+    id: number,
+    payload: Partial<UserPayload>,
+    headers?: RequestHeaders
+  ) {
+    return await this.patch(`${this.basePath}/${id}`, payload, headers);
   }
 
   // ──────────────── DELETE Operations ────────────────
@@ -134,8 +138,8 @@ export class UsersAPI extends BaseAPI {
    * Delete a user
    * DELETE /api/users/{id}
    */
-  async deleteUser(id: number) {
-    return await this.delete(`${this.basePath}/${id}`);
+  async deleteUser(id: number, headers?: RequestHeaders) {
+    return await this.delete(`${this.basePath}/${id}`, headers);
   }
 
   // ──────────────── AUTH Operations ────────────────
@@ -144,16 +148,16 @@ export class UsersAPI extends BaseAPI {
    * Login to get auth token
    * POST /api/login
    */
-  async login(email: string, password: string) {
-    return await this.post('/api/login', { email, password });
+  async login(email: string, password: string, headers?: RequestHeaders) {
+    return await this.post('/api/login', { email, password }, headers);
   }
 
   /**
    * Register a new account
    * POST /api/register
    */
-  async register(email: string, password: string) {
-    return await this.post('/api/register', { email, password });
+  async register(email: string, password: string, headers?: RequestHeaders) {
+    return await this.post('/api/register', { email, password }, headers);
   }
 
   // ──────────────── Helper Methods ────────────────

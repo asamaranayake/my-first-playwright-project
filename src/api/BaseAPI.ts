@@ -1,5 +1,14 @@
 import { APIRequestContext, APIResponse } from '@playwright/test';
 
+export type RequestHeaders = Record<string, string>;
+export type QueryParams = Record<string, string | number | boolean>;
+
+interface BaseRequestOptions {
+  headers?: RequestHeaders;
+  params?: QueryParams;
+  data?: object;
+}
+
 /**
  * BaseAPI - Foundation class for all API helpers.
  * Similar to BasePage in POM, but for API interactions.
@@ -7,53 +16,104 @@ import { APIRequestContext, APIResponse } from '@playwright/test';
  * Wraps Playwright's APIRequestContext with convenient methods.
  */
 export class BaseAPI {
-  constructor(protected request: APIRequestContext) {}
+  constructor(
+    protected request: APIRequestContext,
+    private defaultHeaders: RequestHeaders = {}
+  ) {}
+
+  /**
+   * Add or override headers used by all requests from this API helper.
+   * Useful after login, when an auth token becomes available.
+   */
+  setDefaultHeaders(headers: RequestHeaders): void {
+    this.defaultHeaders = {
+      ...this.defaultHeaders,
+      ...headers,
+    };
+  }
+
+  /**
+   * Remove all helper-level default headers.
+   */
+  clearDefaultHeaders(): void {
+    this.defaultHeaders = {};
+  }
+
+  private buildOptions(options: BaseRequestOptions = {}): BaseRequestOptions {
+    const headers = {
+      ...this.defaultHeaders,
+      ...options.headers,
+    };
+
+    return {
+      ...options,
+      headers: Object.keys(headers).length ? headers : undefined,
+    };
+  }
 
   /**
    * Send a GET request
    * @param endpoint - API endpoint (relative to baseURL)
    * @param params - Optional query parameters
+   * @param headers - Optional request headers
    */
   async get(
     endpoint: string,
-    params?: Record<string, string | number>
+    params?: QueryParams,
+    headers?: RequestHeaders
   ): Promise<APIResponse> {
-    return await this.request.get(endpoint, { params });
+    return await this.request.get(endpoint, this.buildOptions({ params, headers }));
   }
 
   /**
    * Send a POST request with JSON body
    * @param endpoint - API endpoint
    * @param data - Request body object (auto-serialized to JSON)
+   * @param headers - Optional request headers
    */
-  async post(endpoint: string, data: object): Promise<APIResponse> {
-    return await this.request.post(endpoint, { data });
+  async post(
+    endpoint: string,
+    data: object,
+    headers?: RequestHeaders
+  ): Promise<APIResponse> {
+    return await this.request.post(endpoint, this.buildOptions({ data, headers }));
   }
 
   /**
    * Send a PUT request (full resource replacement)
    * @param endpoint - API endpoint
    * @param data - Complete resource data
+   * @param headers - Optional request headers
    */
-  async put(endpoint: string, data: object): Promise<APIResponse> {
-    return await this.request.put(endpoint, { data });
+  async put(
+    endpoint: string,
+    data: object,
+    headers?: RequestHeaders
+  ): Promise<APIResponse> {
+    return await this.request.put(endpoint, this.buildOptions({ data, headers }));
   }
 
   /**
    * Send a PATCH request (partial update)
    * @param endpoint - API endpoint
    * @param data - Partial resource data to update
+   * @param headers - Optional request headers
    */
-  async patch(endpoint: string, data: object): Promise<APIResponse> {
-    return await this.request.patch(endpoint, { data });
+  async patch(
+    endpoint: string,
+    data: object,
+    headers?: RequestHeaders
+  ): Promise<APIResponse> {
+    return await this.request.patch(endpoint, this.buildOptions({ data, headers }));
   }
 
   /**
    * Send a DELETE request
    * @param endpoint - API endpoint
+   * @param headers - Optional request headers
    */
-  async delete(endpoint: string): Promise<APIResponse> {
-    return await this.request.delete(endpoint);
+  async delete(endpoint: string, headers?: RequestHeaders): Promise<APIResponse> {
+    return await this.request.delete(endpoint, this.buildOptions({ headers }));
   }
 
   /**
@@ -77,14 +137,10 @@ export class BaseAPI {
     options: {
       headers?: Record<string, string>;
       data?: object;
-      params?: Record<string, string | number>;
+      params?: QueryParams;
     }
   ): Promise<APIResponse> {
-    const requestOptions: any = {};
-
-    if (options.headers) requestOptions.headers = options.headers;
-    if (options.data) requestOptions.data = options.data;
-    if (options.params) requestOptions.params = options.params;
+    const requestOptions = this.buildOptions(options);
 
     switch (method) {
       case 'GET':
@@ -96,7 +152,7 @@ export class BaseAPI {
       case 'PATCH':
         return await this.request.patch(endpoint, requestOptions);
       case 'DELETE':
-        return await this.request.delete(endpoint);
+        return await this.request.delete(endpoint, requestOptions);
       default:
         throw new Error(`Unsupported HTTP method: ${method}`);
     }

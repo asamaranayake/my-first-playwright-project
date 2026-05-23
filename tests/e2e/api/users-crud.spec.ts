@@ -1,4 +1,11 @@
 import { test, expect } from '../../../fixtures/api-fixtures';
+import { HttpStatusCodes } from '../../../src/api/HttpStatusCodes';
+import {
+  CreateUserResponse,
+  SingleUserResponse,
+  UpdateUserResponse,
+  UserListResponse,
+} from '../../../src/api/UsersAPI';
 import testData from '../../test-data/api/users.json';
 
 
@@ -15,9 +22,9 @@ test.describe('Users API - CRUD with Helper Class', () => {
   test('should create a new user', async ({ usersAPI }) => {
     const response = await usersAPI.createUser(testData.newUser);
 
-    expect(response.status()).toBe(201);
+    expect(response.status()).toBe(HttpStatusCodes.CREATED);
 
-    const body = await response.json();
+    const body = await usersAPI.getResponseBody<CreateUserResponse>(response);
     expect(body.name).toBe(testData.newUser.name);
     expect(body.job).toBe(testData.newUser.job);
     expect(body.id).toBeTruthy();
@@ -29,9 +36,9 @@ test.describe('Users API - CRUD with Helper Class', () => {
   test('should list users using helper', async ({ usersAPI }) => {
     const response = await usersAPI.getUsers(1);
 
-    expect(response.status()).toBe(200);
+    expect(response.status()).toBe(HttpStatusCodes.OK);
 
-    const body = await response.json();
+    const body = await usersAPI.getResponseBody<UserListResponse>(response);
     expect(body.page).toBe(1);
     expect(body.data).toHaveLength(6);
 
@@ -47,16 +54,16 @@ test.describe('Users API - CRUD with Helper Class', () => {
   test('should get single user using helper', async ({ usersAPI }) => {
     const response = await usersAPI.getUserById(2);
 
-    expect(response.status()).toBe(200);
+    expect(response.status()).toBe(HttpStatusCodes.OK);
 
-    const body = await response.json();
+    const body = await usersAPI.getResponseBody<SingleUserResponse>(response);
     expect(body.data.id).toBe(2);
     expect(body.data.email).toContain('@');
   });
 
   test('should get 404 for missing user', async ({ usersAPI }) => {
     const response = await usersAPI.getUserById(99999);
-    expect(response.status()).toBe(404);
+    expect(response.status()).toBe(HttpStatusCodes.NOT_FOUND);
   });
 
   // ──────────────── UPDATE (full) ────────────────
@@ -64,9 +71,9 @@ test.describe('Users API - CRUD with Helper Class', () => {
   test('should fully update a user', async ({ usersAPI }) => {
     const response = await usersAPI.updateUser(2, testData.updatedUser);
 
-    expect(response.status()).toBe(200);
+    expect(response.status()).toBe(HttpStatusCodes.OK);
 
-    const body = await response.json();
+    const body = await usersAPI.getResponseBody<UpdateUserResponse>(response);
     expect(body.name).toBe(testData.updatedUser.name);
     expect(body.job).toBe(testData.updatedUser.job);
     expect(body.updatedAt).toBeTruthy();
@@ -77,9 +84,9 @@ test.describe('Users API - CRUD with Helper Class', () => {
   test('should partially update a user', async ({ usersAPI }) => {
     const response = await usersAPI.patchUser(2, testData.partialUpdate);
 
-    expect(response.status()).toBe(200);
+    expect(response.status()).toBe(HttpStatusCodes.OK);
 
-    const body = await response.json();
+    const body = await usersAPI.getResponseBody<UpdateUserResponse>(response);
     expect(body.job).toBe(testData.partialUpdate.job);
     expect(body.updatedAt).toBeTruthy();
   });
@@ -88,7 +95,7 @@ test.describe('Users API - CRUD with Helper Class', () => {
 
   test('should delete a user', async ({ usersAPI }) => {
     const response = await usersAPI.deleteUser(2);
-    expect(response.status()).toBe(204);
+    expect(response.status()).toBe(HttpStatusCodes.NO_CONTENT);
   });
 
   // ──────────────── FULL LIFECYCLE ────────────────
@@ -99,14 +106,14 @@ test.describe('Users API - CRUD with Helper Class', () => {
       name: 'Lifecycle User',
       job: 'Junior Tester',
     });
-    expect(createRes.status()).toBe(201);
-    const created = await createRes.json();
+    expect(createRes.status()).toBe(HttpStatusCodes.CREATED);
+    const created = await usersAPI.getResponseBody<CreateUserResponse>(createRes);
     const userId = Number(created.id);
     console.log(`✅ Created user with ID: ${userId}`);
 
     // ── Step 2: READ ──
     const readRes = await usersAPI.getUserById(2); // Using existing user for read
-    expect(readRes.status()).toBe(200);
+    expect(readRes.status()).toBe(HttpStatusCodes.OK);
     console.log('✅ Read user successfully');
 
     // ── Step 3: UPDATE (full) ──
@@ -114,8 +121,8 @@ test.describe('Users API - CRUD with Helper Class', () => {
       name: 'Lifecycle User Updated',
       job: 'Senior Tester',
     });
-    expect(updateRes.status()).toBe(200);
-    const updated = await updateRes.json();
+    expect(updateRes.status()).toBe(HttpStatusCodes.OK);
+    const updated = await usersAPI.getResponseBody<UpdateUserResponse>(updateRes);
     expect(updated.name).toBe('Lifecycle User Updated');
     expect(updated.job).toBe('Senior Tester');
     console.log(`✅ Updated user: ${updated.name} - ${updated.job}`);
@@ -124,14 +131,14 @@ test.describe('Users API - CRUD with Helper Class', () => {
     const patchRes = await usersAPI.patchUser(userId, {
       job: 'Lead Tester',
     });
-    expect(patchRes.status()).toBe(200);
-    const patched = await patchRes.json();
+    expect(patchRes.status()).toBe(HttpStatusCodes.OK);
+    const patched = await usersAPI.getResponseBody<UpdateUserResponse>(patchRes);
     expect(patched.job).toBe('Lead Tester');
     console.log(`✅ Patched user job to: ${patched.job}`);
 
     // ── Step 5: DELETE ──
     const deleteRes = await usersAPI.deleteUser(userId);
-    expect(deleteRes.status()).toBe(204);
+    expect(deleteRes.status()).toBe(HttpStatusCodes.NO_CONTENT);
     console.log(`✅ Deleted user: ${userId}`);
 
     console.log('🎉 Complete CRUD lifecycle passed!');

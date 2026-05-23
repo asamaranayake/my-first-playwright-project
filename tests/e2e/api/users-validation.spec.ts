@@ -1,4 +1,12 @@
 import { test, expect } from '../../../fixtures/api-fixtures';
+import { HttpStatusCodes } from '../../../src/api/HttpStatusCodes';
+import {
+  CreateUserResponse,
+  ErrorResponse,
+  LoginResponse,
+  SingleUserResponse,
+  UserListResponse,
+} from '../../../src/api/UsersAPI';
 
 /**
  * Session 05 - Part 3: Advanced Response Validation
@@ -13,8 +21,8 @@ test.describe('Advanced API Validation', () => {
 
   // ──────────────── Header Validation ────────────────
 
-  test('should validate response headers', async ({ request }) => {
-    const response = await request.get('/api/users/2');
+  test('should validate response headers', async ({ usersAPI }) => {
+    const response = await usersAPI.getUserById(2);
 
     // Check content type
     expect(response.headers()['content-type']).toContain('application/json');
@@ -26,9 +34,9 @@ test.describe('Advanced API Validation', () => {
 
   // ──────────────── Data Type Validation ────────────────
 
-  test('should validate data types of response fields', async ({ request }) => {
-    const response = await request.get('/api/users/2');
-    const body = await response.json();
+  test('should validate data types of response fields', async ({ usersAPI }) => {
+    const response = await usersAPI.getUserById(2);
+    const body = await usersAPI.getResponseBody<SingleUserResponse>(response);
 
     // Verify types of each field
     expect(typeof body.data.id).toBe('number');
@@ -46,9 +54,9 @@ test.describe('Advanced API Validation', () => {
 
   // ──────────────── Array Validation ────────────────
 
-  test('should validate all users in list have correct structure', async ({ request }) => {
-    const response = await request.get('/api/users?page=1');
-    const body = await response.json();
+  test('should validate all users in list have correct structure', async ({ usersAPI }) => {
+    const response = await usersAPI.getUsers(1);
+    const body = await usersAPI.getResponseBody<UserListResponse>(response);
 
     expect(body.data.length).toBeGreaterThan(0);
 
@@ -72,13 +80,13 @@ test.describe('Advanced API Validation', () => {
 
   // ──────────────── Pagination Logic ────────────────
 
-  test('should validate pagination business logic', async ({ request }) => {
+  test('should validate pagination business logic', async ({ usersAPI }) => {
     // Fetch two different pages
-    const page1Res = await request.get('/api/users?page=1');
-    const body1 = await page1Res.json();
+    const page1Res = await usersAPI.getUsers(1);
+    const body1 = await usersAPI.getResponseBody<UserListResponse>(page1Res);
 
-    const page2Res = await request.get('/api/users?page=2');
-    const body2 = await page2Res.json();
+    const page2Res = await usersAPI.getUsers(2);
+    const body2 = await usersAPI.getResponseBody<UserListResponse>(page2Res);
 
     // ✅ Correct page numbers
     expect(body1.page).toBe(1);
@@ -90,8 +98,8 @@ test.describe('Advanced API Validation', () => {
     expect(body1.per_page).toBe(body2.per_page);
 
     // ✅ No overlapping user IDs between pages
-    const page1Ids = body1.data.map((u: any) => u.id);
-    const page2Ids = body2.data.map((u: any) => u.id);
+    const page1Ids = body1.data.map((user) => user.id);
+    const page2Ids = body2.data.map((user) => user.id);
 
     for (const id of page1Ids) {
       expect(page2Ids).not.toContain(id);
@@ -104,80 +112,73 @@ test.describe('Advanced API Validation', () => {
 
   // ──────────────── Error Response Validation ────────────────
 
-  test('should validate 404 error response', async ({ request }) => {
-    const response = await request.get('/api/users/99999');
+  test('should validate 404 error response', async ({ usersAPI }) => {
+    const response = await usersAPI.getUserById(99999);
 
-    expect(response.status()).toBe(404);
+    expect(response.status()).toBe(HttpStatusCodes.NOT_FOUND);
     expect(response.ok()).toBeFalsy();
 
-    const body = await response.json();
+    const body = await usersAPI.getResponseBody<Record<string, never>>(response);
     // reqres.in returns empty object for 404
     expect(Object.keys(body)).toHaveLength(0);
   });
 
   // ──────────────── Auth Validation ────────────────
 
-  test('should validate successful login', async ({ request }) => {
-    const response = await request.post('/api/login', {
-      data: {
-        email: 'eve.holt@reqres.in',
-        password: 'cityslicka',
-      },
-    });
+  test('should validate successful login', async ({ usersAPI }) => {
+    const response = await usersAPI.login('eve.holt@reqres.in', 'cityslicka');
 
-    expect(response.status()).toBe(200);
+    expect(response.status()).toBe(HttpStatusCodes.OK);
 
-    const body = await response.json();
+    const body = await usersAPI.getResponseBody<LoginResponse>(response);
     expect(body).toHaveProperty('token');
     expect(typeof body.token).toBe('string');
     expect(body.token.length).toBeGreaterThan(0);
   });
 
-  test('should validate login with missing password returns 400', async ({ request }) => {
-    const response = await request.post('/api/login', {
+  test('should validate login with missing password returns 400', async ({ usersAPI }) => {
+    const response = await usersAPI.requestWithHeaders('POST', '/api/login', {
       data: {
         email: 'eve.holt@reqres.in',
         // Password intentionally missing
       },
     });
 
-    expect(response.status()).toBe(400);
+    expect(response.status()).toBe(HttpStatusCodes.BAD_REQUEST);
 
-    const body = await response.json();
+    const body = await usersAPI.getResponseBody<ErrorResponse>(response);
     expect(body).toHaveProperty('error');
     expect(body.error).toBe('Missing password');
   });
 
-  test('should validate registration with missing password returns 400', async ({ request }) => {
-    const response = await request.post('/api/register', {
+  test('should validate registration with missing password returns 400', async ({ usersAPI }) => {
+    const response = await usersAPI.requestWithHeaders('POST', '/api/register', {
       data: {
         email: 'eve.holt@reqres.in',
         // Password intentionally missing
       },
     });
 
-    expect(response.status()).toBe(400);
+    expect(response.status()).toBe(HttpStatusCodes.BAD_REQUEST);
 
-    const body = await response.json();
+    const body = await usersAPI.getResponseBody<ErrorResponse>(response);
     expect(body).toHaveProperty('error');
     expect(body.error).toBe('Missing password');
   });
 
   // ──────────────── POST Response Validation ────────────────
 
-  test('should validate POST response matches request data', async ({ request }) => {
+  test('should validate POST response matches request data', async ({ usersAPI }) => {
     const payload = {
       name: 'Validation Test User',
       job: 'Test Engineer',
     };
 
-    const response = await request.post('/api/users', {
-      data: payload,
-    });
+    const response = await usersAPI.createUser(payload);
 
-    expect(response.status()).toBe(201);
+    expect(response.status()).toBe(HttpStatusCodes.CREATED);
 
-    const body = await response.json();
+    const body = await usersAPI.getResponseBody<CreateUserResponse>(response);
 
     // Response should echo back our data
     expect(body.name).toBe(payload.name);
@@ -195,18 +196,18 @@ test.describe('Advanced API Validation', () => {
 
   // ──────────────── Complete Multi-Level Validation ────────────────
 
-  test('should perform complete multi-level validation', async ({ request }) => {
-    const response = await request.get('/api/users/2');
+  test('should perform complete multi-level validation', async ({ usersAPI }) => {
+    const response = await usersAPI.getUserById(2);
 
     // Level 1: Status
-    expect(response.status()).toBe(200);
+    expect(response.status()).toBe(HttpStatusCodes.OK);
     expect(response.ok()).toBeTruthy();
 
     // Level 1.5: Headers
     expect(response.headers()['content-type']).toContain('application/json');
 
     // Level 2: Structure
-    const body = await response.json();
+    const body = await usersAPI.getResponseBody<SingleUserResponse>(response);
     expect(body).toHaveProperty('data');
     expect(body).toHaveProperty('support');
     expect(body.data).toHaveProperty('id');
