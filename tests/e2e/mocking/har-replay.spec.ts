@@ -69,12 +69,15 @@ test.describe('HAR Recording & Replay', () => {
   /**
    * Demonstrate routeFromHAR at the context level with notFound option.
    */
-  test('context-level HAR replay with notFound fallback', async ({
+  test.only('context-level HAR replay with notFound fallback', async ({
     context,
   }) => {
+
+    const fruitsHarPath = path.join(HAR_DIR, 'demo.playwright.dev.har');
+    console.log(`Using HAR file: ${fruitsHarPath}`);
     await context.routeFromHAR(path.join(HAR_DIR, 'demo.playwright.dev.har'), {
       url: '**/api/**',
-      notFound: 'fallback', // fall through to next handler if not in HAR
+      notFound: 'abort', // fall through to next handler if not in HAR
     });
 
     const page = await context.newPage();
