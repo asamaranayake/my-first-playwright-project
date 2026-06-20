@@ -1,32 +1,67 @@
 # ============================================================
-# GitHub Actions: Sharded Playwright Workflow
+# GitHub Actions: Manual Sharded Playwright Workflow
 # ============================================================
-# This workflow splits tests across 4 parallel machines using
-# Playwright's --shard flag and matrix strategy.
+# This workflow does NOT run on push or pull_request.
+# Trigger it manually from the "Actions" tab ("Run workflow")
+# or let it run on the weekly schedule below.
 #
-# After all shards complete, a merge job combines the blob
+# It splits tests across N parallel machines using Playwright's
+# --shard flag and a matrix strategy, then merges the blob
 # reports into a single HTML report.
 # ============================================================
 
-name: Playwright Tests (Sharded)
+name: Playwright Tests (Sharded, Manual)
+
 on:
-  push:
-    branches: [ feature/session_08_CICD ]
-  pull_request:
-    branches: [ feature/session_08_CICD ]
+  # Run manually from the GitHub Actions tab
+  workflow_dispatch:
+    inputs:
+      grep:
+        description: 'Tag/pattern to filter tests (e.g. @smoke, @regression). Leave empty to run all.'
+        required: false
+        default: ''
+      project:
+        description: 'Playwright project to run (e.g. chromium). Leave empty for default.'
+        required: false
+        default: ''
+      shardTotal:
+        description: 'Number of parallel shards'
+        required: false
+        default: '4'
+
+  # Run automatically on a schedule (every Monday at 03:00 UTC)
+  schedule:
+    - cron: '0 3 * * 1'
 
 jobs:
   # ─────────────────────────────────────────────────
-  # Job 1: Run tests in parallel shards
+  # Job 1: Build the shard matrix from the shardTotal input
+  # ─────────────────────────────────────────────────
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      shardTotal: ${{ steps.matrix.outputs.shardTotal }}
+      shardIndices: ${{ steps.matrix.outputs.shardIndices }}
+    steps:
+      - name: Compute shard matrix
+        id: matrix
+        run: |
+          total="${{ inputs.shardTotal || 4 }}"
+          indices=$(seq 1 "$total" | jq -cs '.')
+          echo "shardTotal=$total" >> "$GITHUB_OUTPUT"
+          echo "shardIndices=$indices" >> "$GITHUB_OUTPUT"
+
+  # ─────────────────────────────────────────────────
+  # Job 2: Run tests in parallel shards
   # ─────────────────────────────────────────────────
   playwright-tests:
+    needs: [setup]
     timeout-minutes: 60
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        shardIndex: [1, 2, 3, 4]
-        shardTotal: [4]
+        shardIndex: ${{ fromJson(needs.setup.outputs.shardIndices) }}
 
     steps:
     - name: Checkout repository
@@ -43,8 +78,12 @@ jobs:
     - name: Install Playwright Browsers
       run: npx playwright install --with-deps
 
-    - name: Run Playwright tests (Shard ${{ matrix.shardIndex }}/${{ matrix.shardTotal }})
-      run: npx playwright test --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
+    - name: Run Playwright tests (Shard ${{ matrix.shardIndex }}/${{ needs.setup.outputs.shardTotal }})
+      run: |
+        npx playwright test \
+          --shard=${{ matrix.shardIndex }}/${{ needs.setup.outputs.shardTotal }} \
+          ${{ inputs.grep != '' && format('--grep "{0}"', inputs.grep) || '' }} \
+          ${{ inputs.project != '' && format('--project={0}', inputs.project) || '' }}
       env:
         CI: 'true'
 
@@ -61,7 +100,7 @@ jobs:
   # ─────────────────────────────────────────────────
   merge-reports:
     if: ${{ !cancelled() }}
-    needs: [playwright-tests]
+    needs: [setup, playwright-tests]
     runs-on: ubuntu-latest
 
     steps:

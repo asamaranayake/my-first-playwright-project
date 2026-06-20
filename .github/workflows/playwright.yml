@@ -1,20 +1,38 @@
 # ============================================================
-# GitHub Actions: Basic Playwright Workflow
+# GitHub Actions: Manual Playwright Workflow (Single Run)
 # ============================================================
-# This workflow runs Playwright tests on:
-#   - Push to main/master branches
-#   - Pull requests targeting main/master
+# This workflow does NOT run on push or pull_request.
+# Trigger it yourself from the "Actions" tab ("Run workflow")
+# or let it run on the daily schedule below.
 #
-# It uploads the HTML report as an artifact for download.
+# Inputs let you target a tag (e.g. @smoke), a specific project,
+# or a free-form grep pattern, just like running locally:
+#   npx playwright test --grep @smoke --project=chromium
 # ============================================================
 
-name: Playwright Tests
+name: Playwright Tests (Manual)
+
 on:
-  push:
-    branches: [ feature/session_08_CICD ]
-  pull_request:
-    branches: [ feature/session_08_CICD ]
-  
+  # Run manually from the GitHub Actions tab
+  workflow_dispatch:
+    inputs:
+      grep:
+        description: 'Tag/pattern to filter tests (e.g. @smoke, @regression). Leave empty to run all.'
+        required: false
+        default: ''
+      project:
+        description: 'Playwright project to run (e.g. chromium). Leave empty for default.'
+        required: false
+        default: ''
+      headed:
+        description: 'Run in headed mode'
+        required: false
+        default: false
+        type: boolean
+
+  # Run automatically on a schedule (daily at 02:00 UTC)
+  schedule:
+    - cron: '0 2 * * *'
 
 jobs:
   test:
@@ -37,7 +55,11 @@ jobs:
       run: npx playwright install --with-deps
 
     - name: Run Playwright tests
-      run: npx playwright test
+      run: |
+        npx playwright test \
+          ${{ inputs.grep != '' && format('--grep "{0}"', inputs.grep) || '' }} \
+          ${{ inputs.project != '' && format('--project={0}', inputs.project) || '' }} \
+          ${{ inputs.headed == true && '--headed' || '' }}
       env:
         CI: 'true'
 
