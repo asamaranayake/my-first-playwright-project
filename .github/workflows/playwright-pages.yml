@@ -30,8 +30,9 @@ on:
         default: ''
 
   # Optional: publish a fresh report every night at 05:00 UTC
-  schedule:
-    - cron: '0 5 * * *'
+  # NOTE: Commented out — demo only. Uncomment to publish on a schedule.
+  # schedule:
+  #   - cron: '0 5 * * *'
 
 jobs:
   # ─────────────────────────────────────────────────

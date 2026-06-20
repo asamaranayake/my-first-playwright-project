@@ -103,6 +103,8 @@ In this lesson we only use `workflow_dispatch` + `schedule` — no push/PR trigg
 
 Use [crontab.guru](https://crontab.guru) to design and validate.
 
+> **Note for this repo:** all `schedule:` blocks are **commented out** in the workflow files so the demos don't trigger unwanted automatic runs. Uncomment them when you actually want scheduled execution.
+
 ---
 
 ## 3. Workflow 1 — Manual Single Run

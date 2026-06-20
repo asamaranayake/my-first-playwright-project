@@ -31,8 +31,9 @@ on:
         default: ''
 
   # Optional schedule — every day at 04:00 UTC
-  schedule:
-    - cron: '0 4 * * *'
+  # NOTE: Commented out — demo only. Uncomment to enable nightly runs.
+  # schedule:
+  #   - cron: '0 4 * * *'
 
 jobs:
   test:
