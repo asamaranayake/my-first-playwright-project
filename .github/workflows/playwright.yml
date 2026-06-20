@@ -31,8 +31,9 @@ on:
         type: boolean
 
   # Run automatically on a schedule (daily at 02:00 UTC)
-  schedule:
-    - cron: '0 2 * * *'
+  # NOTE: Commented out — demo only. Uncomment to enable nightly runs.
+  # schedule:
+  #   - cron: '0 2 * * *'
 
 jobs:
   test:
