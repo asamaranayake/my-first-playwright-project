@@ -1,0 +1,133 @@
+# ============================================================
+# GitHub Actions: Manual Sharded Playwright Workflow
+# ============================================================
+# This workflow does NOT run on push or pull_request.
+# Trigger it manually from the "Actions" tab ("Run workflow")
+# or let it run on the weekly schedule below.
+#
+# It splits tests across N parallel machines using Playwright's
+# --shard flag and a matrix strategy, then merges the blob
+# reports into a single HTML report.
+# ============================================================
+
+name: Playwright Tests (Sharded, Manual)
+
+on:
+  # Run manually from the GitHub Actions tab
+  workflow_dispatch:
+    inputs:
+      grep:
+        description: 'Tag/pattern to filter tests (e.g. @smoke, @regression). Leave empty to run all.'
+        required: false
+        default: ''
+      project:
+        description: 'Playwright project to run (e.g. chromium). Leave empty for default.'
+        required: false
+        default: ''
+      shardTotal:
+        description: 'Number of parallel shards'
+        required: false
+        default: '4'
+
+  # Run automatically on a schedule (every Monday at 03:00 UTC)
+  schedule:
+    - cron: '0 3 * * 1'
+
+jobs:
+  # ─────────────────────────────────────────────────
+  # Job 1: Build the shard matrix from the shardTotal input
+  # ─────────────────────────────────────────────────
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      shardTotal: ${{ steps.matrix.outputs.shardTotal }}
+      shardIndices: ${{ steps.matrix.outputs.shardIndices }}
+    steps:
+      - name: Compute shard matrix
+        id: matrix
+        run: |
+          total="${{ inputs.shardTotal || 4 }}"
+          indices=$(seq 1 "$total" | jq -cs '.')
+          echo "shardTotal=$total" >> "$GITHUB_OUTPUT"
+          echo "shardIndices=$indices" >> "$GITHUB_OUTPUT"
+
+  # ─────────────────────────────────────────────────
+  # Job 2: Run tests in parallel shards
+  # ─────────────────────────────────────────────────
+  playwright-tests:
+    needs: [setup]
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shardIndex: ${{ fromJson(needs.setup.outputs.shardIndices) }}
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v5
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v5
+      with:
+        node-version: lts/*
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Install Playwright Browsers
+      run: npx playwright install --with-deps
+
+    - name: Run Playwright tests (Shard ${{ matrix.shardIndex }}/${{ needs.setup.outputs.shardTotal }})
+      run: |
+        npx playwright test \
+          --shard=${{ matrix.shardIndex }}/${{ needs.setup.outputs.shardTotal }} \
+          ${{ inputs.grep != '' && format('--grep "{0}"', inputs.grep) || '' }} \
+          ${{ inputs.project != '' && format('--project={0}', inputs.project) || '' }}
+      env:
+        CI: 'true'
+
+    - name: Upload blob report
+      if: ${{ !cancelled() }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: blob-report-${{ matrix.shardIndex }}
+        path: blob-report
+        retention-days: 1
+
+  # ─────────────────────────────────────────────────
+  # Job 2: Merge blob reports into HTML
+  # ─────────────────────────────────────────────────
+  merge-reports:
+    if: ${{ !cancelled() }}
+    needs: [setup, playwright-tests]
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v5
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v5
+      with:
+        node-version: lts/*
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Download blob reports from all shards
+      uses: actions/download-artifact@v5
+      with:
+        path: all-blob-reports
+        pattern: blob-report-*
+        merge-multiple: true
+
+    - name: Merge into HTML Report
+      run: npx playwright merge-reports --reporter html ./all-blob-reports
+
+    - name: Upload combined HTML report
+      uses: actions/upload-artifact@v4
+      with:
+        name: html-report--attempt-${{ github.run_attempt }}
+        path: playwright-report
+        retention-days: 14

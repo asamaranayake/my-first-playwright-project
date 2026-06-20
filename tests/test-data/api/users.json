@@ -1,0 +1,20 @@
+{
+  "newUser": {
+    "name": "Playwright Student",
+    "job": "QA Automation Engineer"
+  },
+  "updatedUser": {
+    "name": "Playwright Graduate",
+    "job": "Senior QA Engineer"
+  },
+  "partialUpdate": {
+    "job": "Lead QA Engineer"
+  },
+  "loginCredentials": {
+    "email": "eve.holt@reqres.in",
+    "password": "cityslicka"
+  },
+  "invalidLogin": {
+    "email": "eve.holt@reqres.in"
+  }
+}

@@ -1,0 +1,23 @@
+# ============================================================
+# Docker Compose: Local CI Simulation
+# ============================================================
+# Simulate your CI pipeline locally with Docker Compose.
+# Usage:
+#   docker compose up --build
+#
+# Reports will be available in ./playwright-report/ on your host.
+# ============================================================
+
+version: '3.8'
+
+services:
+  playwright-tests:
+    build: .
+    init: true
+    ipc: host
+    environment:
+      - CI=true
+    volumes:
+      - ./playwright-report:/app/playwright-report
+      - ./test-results:/app/test-results
+    command: npx playwright test
