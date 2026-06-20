@@ -1,0 +1,112 @@
+# ============================================================
+# GitHub Actions: Playwright Report → GitHub Pages
+# ============================================================
+# This workflow runs the test suite and then publishes the HTML
+# report to GitHub Pages, so every run gets a permanent, shareable
+# URL instead of a zip file you have to download and unzip.
+#
+# It is a SEPARATE workflow on purpose — keep "run tests" and
+# "publish a report site" as independent concerns. You can trigger
+# this one manually whenever you want a hosted report, without
+# touching playwright.yml / playwright-sharded.yml / playwright-docker.yml.
+#
+# One-time setup required (see README section below):
+#   Settings → Pages → Source: "Deploy from a branch" → gh-pages → / (root)
+#   (the gh-pages branch is created automatically on first run)
+# ============================================================
+
+name: Playwright Report (GitHub Pages)
+
+on:
+  workflow_dispatch:
+    inputs:
+      grep:
+        description: 'Tag/pattern to filter tests (e.g. @smoke). Leave empty to run all.'
+        required: false
+        default: ''
+      project:
+        description: 'Playwright project to run (e.g. chromium). Leave empty for default.'
+        required: false
+        default: ''
+
+  # Optional: publish a fresh report every night at 05:00 UTC
+  # NOTE: Commented out — demo only. Uncomment to publish on a schedule.
+  # schedule:
+  #   - cron: '0 5 * * *'
+
+jobs:
+  # ─────────────────────────────────────────────────
+  # Job 1: Run tests, produce the HTML report
+  # ─────────────────────────────────────────────────
+  test:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v5
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v6
+      with:
+        node-version: lts/*
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Install Playwright Browsers
+      run: npx playwright install --with-deps
+
+    - name: Run Playwright tests
+      run: |
+        npx playwright test \
+          ${{ inputs.grep != '' && format('--grep "{0}"', inputs.grep) || '' }} \
+          ${{ inputs.project != '' && format('--project={0}', inputs.project) || '' }}
+      env:
+        CI: 'true'
+
+    # Keep the zip artifact too — useful for local debugging,
+    # and acts as a fallback if the Pages deploy step ever fails.
+    - name: Upload HTML Report (artifact)
+      uses: actions/upload-artifact@v5
+      if: ${{ !cancelled() }}
+      with:
+        name: playwright-report
+        path: playwright-report/
+        retention-days: 30
+
+  # ─────────────────────────────────────────────────
+  # Job 2: Publish the report to GitHub Pages
+  # Runs even if tests FAILED (so you can see why), but
+  # not if the run was cancelled — same convention used
+  # in the other workflows in this repo.
+  # ─────────────────────────────────────────────────
+  deploy-report:
+    needs: [test]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # required to push to the gh-pages branch
+
+    steps:
+    - name: Download report artifact
+      uses: actions/download-artifact@v5
+      with:
+        name: playwright-report
+        path: playwright-report
+
+    # destination_dir keeps each run in its own folder
+    # (reports/<run_number>) so history isn't overwritten.
+    # keep_files: true preserves previous runs' folders.
+    - name: Deploy to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v4
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./playwright-report
+        destination_dir: reports/${{ github.run_number }}
+        keep_files: true
+
+    - name: Print report URL
+      run: |
+        echo "Report published at:"
+        echo "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/reports/${{ github.run_number }}/"

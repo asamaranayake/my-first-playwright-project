@@ -16,6 +16,7 @@
 | 3 | Workflow 1 — Manual single run |
 | 4 | Workflow 2 — Sharded parallel run |
 | 5 | Workflow 3 — Docker container speed-up |
+| 5b | Workflow 4 — Publish report to GitHub Pages |
 | 6 | Debugging failed runs & artifacts |
 | 7 | GitHub's starter templates |
 | 8 | Hands-on lab |
@@ -101,6 +102,8 @@ In this lesson we only use `workflow_dispatch` + `schedule` — no push/PR trigg
 ```
 
 Use [crontab.guru](https://crontab.guru) to design and validate.
+
+> **Note for this repo:** all `schedule:` blocks are **commented out** in the workflow files so the demos don't trigger unwanted automatic runs. Uncomment them when you actually want scheduled execution.
 
 ---
 
@@ -300,6 +303,59 @@ The entire job runs inside the Docker image — no `setup-node`, no `playwright 
 
 ---
 
+## 5b. Workflow 4 — Publish Report to GitHub Pages
+
+File: `.github/workflows/playwright-pages.yml`
+
+**Problem with artifacts alone:** every report is a zip you have to download, unzip, and open locally. There's no shareable link, and old reports are easy to lose track of.
+
+**The fix:** run the tests, then push the HTML report to a `gh-pages` branch so GitHub serves it as a real website with a permanent URL.
+
+```
+Job 1: test           Job 2: deploy-report
+┌──────────────┐      ┌────────────────────────────────┐
+│ run tests    │ ───► │ download playwright-report      │
+│ upload zip   │      │ push to gh-pages branch          │
+│ artifact too │      │   destination_dir: reports/<run> │
+└──────────────┘      └────────────────────────────────┘
+                                    ↓
+                  https://<owner>.github.io/<repo>/reports/<run_number>/
+```
+
+**One-time setup (do this once per repo):**
+
+1. Run the workflow once (Actions tab → "Playwright Report (GitHub Pages)" → Run workflow) — this creates the `gh-pages` branch automatically
+2. Go to **Settings → Pages**
+3. Under **Source**, choose **"Deploy from a branch"**
+4. Branch: `gh-pages`, folder: `/ (root)` → Save
+5. Wait ~1 minute, then visit the printed URL from the workflow's last step
+
+**Why each run gets its own folder:**
+
+```yaml
+destination_dir: reports/${{ github.run_number }}
+keep_files: true
+```
+- `destination_dir` puts each run in `reports/12`, `reports/13`, etc. — instead of overwriting the same path every time
+- `keep_files: true` tells the deploy action **not to delete** previously published folders, so report history accumulates instead of being wiped each run
+
+**Why `deploy-report` still runs if tests fail:**
+
+```yaml
+deploy-report:
+  needs: [test]
+  if: ${{ !cancelled() }}
+```
+Same convention as the artifact upload step in the other workflows: you usually *want* to see the report for a failing run (that's the whole point of debugging), so it only skips when the run is **cancelled**, not when tests fail.
+
+**Demo for students:**
+
+1. Run the workflow → wait for both jobs to go green
+2. Open `https://<owner>.github.io/<repo>/reports/<run_number>/`
+3. Run it again → note the run number increments and the old report is still reachable at its own URL
+
+---
+
 ## 6. Debugging & Artifacts
 
 **Actions tab layout:**
@@ -311,6 +367,7 @@ All workflows (left sidebar):
   Playwright Tests (Manual)
   Playwright Tests (Sharded)
   Playwright Tests (Docker)
+  Playwright Report (GitHub Pages)
 
 Workflow runs (main panel):
   [green]  #42  Manual run on main      2 min ago
@@ -444,6 +501,7 @@ Success: you navigated logs and the report to find the failure.
 
 | Pitfall | Fix |
 |---|---|
+| `npm ci` fails with "no package-lock.json" | Run `npm install` once locally, commit `package-lock.json`. `npm ci` requires the lockfile to already exist — it never generates one |
 | Forgot `--with-deps` | Add it to `npx playwright install` |
 | Container version mismatch | Pin image tag to match `@playwright/test` in `package.json` |
 | Used `npm install` in CI | Switch to `npm ci` |
