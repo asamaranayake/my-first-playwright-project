@@ -1,0 +1,78 @@
+# ============================================================
+# GitHub Actions: Playwright in Microsoft's Docker Container
+# ============================================================
+# This workflow runs the entire job INSIDE Microsoft's official
+# Playwright Docker image, which already contains:
+#   - Node.js
+#   - All 3 browsers (Chromium, Firefox, WebKit)
+#   - All OS-level dependencies (fonts, codecs, GTK, etc.)
+#
+# Compared to playwright.yml / playwright-sharded.yml, this skips:
+#   - actions/setup-node       (Node already in image)
+#   - npx playwright install   (browsers already in image)
+#
+# Result: faster, more reproducible runs. The image version MUST
+# match the @playwright/test version in package.json (1.57.0).
+# ============================================================
+
+name: Playwright Tests (Docker Container)
+
+on:
+  # Run manually from the GitHub Actions tab
+  workflow_dispatch:
+    inputs:
+      grep:
+        description: 'Tag/pattern to filter tests (e.g. @smoke). Leave empty to run all.'
+        required: false
+        default: ''
+      project:
+        description: 'Playwright project to run (e.g. chromium). Leave empty for default.'
+        required: false
+        default: ''
+
+  # Optional schedule — every day at 04:00 UTC
+  schedule:
+    - cron: '0 4 * * *'
+
+jobs:
+  test:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+
+    # ─────────────────────────────────────────────────
+    # KEY DIFFERENCE: run the whole job inside this image
+    # Pulled once per runner, then every step executes inside it.
+    # Pin the tag (v1.57.0-noble) to match @playwright/test in
+    # package.json. "noble" = Ubuntu 24.04 LTS base.
+    # ─────────────────────────────────────────────────
+    container:
+      image: mcr.microsoft.com/playwright:v1.57.0-noble
+      options: --user 1001    # avoid root-owned files in artifacts
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v5
+
+    # No setup-node step — Node is already in the image.
+    # No "playwright install --with-deps" — browsers are already in the image.
+
+    - name: Install dependencies
+      run: npm ci   # ci = strict install from package-lock.json (faster, reproducible)
+
+    - name: Run Playwright tests
+      run: |
+        npx playwright test \
+          ${{ inputs.grep != '' && format('--grep "{0}"', inputs.grep) || '' }} \
+          ${{ inputs.project != '' && format('--project={0}', inputs.project) || '' }}
+      env:
+        CI: 'true'
+        # HOME must be set inside containers for some Playwright caches
+        HOME: /root
+
+    - name: Upload HTML Report
+      uses: actions/upload-artifact@v5
+      if: ${{ !cancelled() }}
+      with:
+        name: playwright-report-docker
+        path: playwright-report/
+        retention-days: 30
