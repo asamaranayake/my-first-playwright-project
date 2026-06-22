@@ -260,7 +260,7 @@ Run tests        45s
 **The fix:** run inside a pre-built image that already has Node + all browsers + OS deps baked in.
 
 ```
-mcr.microsoft.com/playwright:v1.57.0-noble
+mcr.microsoft.com/playwright:v1.61.0-noble
                               └────┬────┘ └─┬─┘
                        Playwright version   Ubuntu base
 ```
@@ -286,13 +286,35 @@ jobs:
   test:
     runs-on: ubuntu-latest
     container:
-      image: mcr.microsoft.com/playwright:v1.57.0-noble
+      image: mcr.microsoft.com/playwright:v1.61.0-noble
     steps:
       - uses: actions/checkout@v5
       - run: npm ci
       - run: npx playwright test
 ```
 The entire job runs inside the Docker image — no `setup-node`, no `playwright install`.
+
+**Real bug we hit — worth demoing live:**
+
+```
+Error: browserType.launch: Executable doesn't exist at /ms-playwright/...
+╔════════════════════════════════════════════════════════╗
+║ Looks like Playwright was just updated to 1.61.0.      ║
+║ Please update docker image as well.                    ║
+║ -  current: mcr.microsoft.com/playwright:v1.57.0-noble ║
+║ - required: mcr.microsoft.com/playwright:v1.61.0-noble ║
+╚════════════════════════════════════════════════════════╝
+```
+
+**Why this happens:** `package.json` pins `"@playwright/test": "^1.57.0"` — the `^` means "any 1.x ≥ 1.57.0". Running `npm install` (or `npm ci` against a regenerated lockfile) can resolve to a newer version like `1.61.0` without you noticing. The non-Docker workflows don't break because they run `npx playwright install --with-deps` fresh every time — it always matches whatever version was just installed. The Docker workflow *skips that step on purpose* (that's the speed win), so the image tag is **not automatically kept in sync** — you have to do it by hand.
+
+**The fix:** check the *resolved* version, not the semver range:
+```bash
+grep "@playwright/test" package-lock.json   # shows the actual installed version
+```
+Then update the image tag in `playwright-docker.yml` to match exactly.
+
+> Teaching point: this is a great live-bug demo. Bump `@playwright/test` in `package.json`, run `npm install`, run the Docker workflow, and watch it fail with this exact error — then fix the image tag together.
 
 **`npm install` vs `npm ci`:**
 
@@ -508,7 +530,8 @@ Success: you navigated logs and the report to find the failure.
 | Cron in local time | All cron is UTC |
 | Artifacts missing on failure | Add `if: ${{ !cancelled() }}` |
 | Sharded matrix hardcoded | Use the dynamic `setup` job pattern |
-| Tests pass locally, fail on CI | Run `docker run -it mcr.microsoft.com/playwright:v1.57.0-noble` locally to reproduce |
+| Tests pass locally, fail on CI | Run `docker run -it mcr.microsoft.com/playwright:v1.61.0-noble` locally to reproduce |
+| Docker workflow: "Executable doesn't exist" | `package.json` semver range resolved to a newer Playwright than the pinned image. Check `package-lock.json` for the real version and update the image tag to match |
 
 ---
 
