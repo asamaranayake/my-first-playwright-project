@@ -18,7 +18,7 @@ export default defineConfig({
   use: {
     // Headless mode: true = no browser window, false = see browser
     headless: false,
-    
+    acceptDownloads: true,
     // Slow down browser actions (in milliseconds) - useful for watching tests
     // Set to 0 for maximum speed, increase to slow down (e.g., 500, 1000)
     launchOptions: {

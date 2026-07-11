@@ -36,7 +36,6 @@ test.describe('Dialog Handling', () => {
     test('handle alert with once handler', async ({ page }) => {
       // Use once() for single dialog handling
       page.once('dialog', dialog => dialog.accept());
-
       await page.getByRole('button', { name: 'Click for JS Alert' }).click();
 
       await expect(page.locator('#result')).toHaveText('You successfully clicked an alert');
