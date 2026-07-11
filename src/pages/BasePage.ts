@@ -130,6 +130,11 @@ export class BasePage {
     await locator.fill(text);
   }
 
+  async clearText(locator: Locator): Promise<void> {
+    await locator.waitFor({ state: 'visible' });
+    await locator.clear();
+  }
+
   /**
    * Get text content from an element
    * @param locator - The element locator

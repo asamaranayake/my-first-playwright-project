@@ -3,6 +3,9 @@
 
 import { type Page, type Locator } from '@playwright/test';
 import { BasePage } from './BasePage';
+import { InventoryPage } from './InventoryPage';
+
+
 
 export class LoginPage extends BasePage {
   // ==========================================
@@ -30,6 +33,10 @@ export class LoginPage extends BasePage {
   /** Accepted usernames list */
   readonly acceptedUsernames: Locator;
 
+  // ==========================================
+  // CONSTRUCTOR
+  // constructor initializes locators and inherits from BasePage
+  // ==========================================
   constructor(page: Page) {
     super(page);
     
@@ -50,10 +57,13 @@ export class LoginPage extends BasePage {
   /**
    * Navigate to the login page
    */
-  async goto(): Promise<void> {
-    await this.navigate('https://www.saucedemo.com/');
-  }
+  // async goto(): Promise<void> {
+  //   await this.navigate('https://www.saucedemo.com/');
+  // }
 
+  async navigate(path: string = 'https://www.saucedemo.com/'): Promise<void> {
+    await super.navigate(path);
+  }
   // ==========================================
   // ACTIONS
   // ==========================================
@@ -63,10 +73,11 @@ export class LoginPage extends BasePage {
    * @param username - The username to enter
    * @param password - The password to enter
    */
-  async login(username: string, password: string): Promise<void> {
-    await this.usernameInput.fill(username);
-    await this.passwordInput.fill(password);
-    await this.loginButton.click();
+  async login(username: string, password: string): Promise<InventoryPage> {
+    await this.enterUsername(username);
+    await this.enterPassword(password);
+    await this.clickLogin();
+    return new InventoryPage(this.page);
   }
 
   /**
@@ -74,7 +85,8 @@ export class LoginPage extends BasePage {
    * @param username - The username to enter
    */
   async enterUsername(username: string): Promise<void> {
-    await this.usernameInput.fill(username);
+    await super.waitAndFill(this.usernameInput, username);
+
   }
 
   /**
@@ -82,22 +94,22 @@ export class LoginPage extends BasePage {
    * @param password - The password to enter
    */
   async enterPassword(password: string): Promise<void> {
-    await this.passwordInput.fill(password);
+    await super.waitAndFill(this.passwordInput, password);
   }
 
   /**
    * Click the login button
    */
   async clickLogin(): Promise<void> {
-    await this.loginButton.click();
+    await super.waitAndClick(this.loginButton);
   }
 
   /**
    * Clear the login form
    */
   async clearForm(): Promise<void> {
-    await this.usernameInput.clear();
-    await this.passwordInput.clear();
+    await super.clearText(this.usernameInput);
+    await super.clearText(this.passwordInput);
   }
 
   /**
@@ -105,7 +117,7 @@ export class LoginPage extends BasePage {
    */
   async dismissError(): Promise<void> {
     if (await this.errorButton.isVisible()) {
-      await this.errorButton.click();
+      await super.waitAndClick(this.errorButton);
     }
   }
 

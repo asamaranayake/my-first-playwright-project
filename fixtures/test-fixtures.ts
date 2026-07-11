@@ -34,6 +34,7 @@ type SauceDemoFixtures = {
   
   /** Cart page with items pre-added */
   cartWithItems: CartPage;
+
 };
 
 // ==========================================
@@ -103,7 +104,7 @@ export const test = base.extend<SauceDemoFixtures>({
     const inventoryPage = new InventoryPage(page);
     
     // Setup: Login
-    await loginPage.goto();
+    await loginPage.navigate();
     await loginPage.login(CREDENTIALS.standard.username, CREDENTIALS.standard.password);
     
     // Wait for inventory page to load
@@ -155,7 +156,7 @@ export const test = base.extend<SauceDemoFixtures>({
     const inventoryPage = new InventoryPage(page);
     
     // Login
-    await loginPage.goto();
+    await loginPage.navigate();
     await loginPage.login(CREDENTIALS.standard.username, CREDENTIALS.standard.password);
     await page.waitForURL(/inventory/);
     
@@ -180,7 +181,7 @@ export const test = base.extend<SauceDemoFixtures>({
     const cartPage = new CartPage(page);
     
     // Login
-    await loginPage.goto();
+    await loginPage.navigate();
     await loginPage.login(CREDENTIALS.standard.username, CREDENTIALS.standard.password);
     await page.waitForURL(/inventory/);
     

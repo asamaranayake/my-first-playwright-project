@@ -3,24 +3,24 @@
 
 import { test, expect } from '@playwright/test';
 import { LoginPage } from '../../../src/pages/LoginPage';
+import { InventoryPage } from '../../../src/pages/InventoryPage';
 
 test.describe('Login Page', () => {
   let loginPage: LoginPage;
 
   test.beforeEach(async ({ page }) => {
     loginPage = new LoginPage(page);
-    await loginPage.goto();
+    await loginPage.navigate();
   });
 
   // ==========================================
   // SUCCESSFUL LOGIN TESTS
   // ==========================================
 
-  test('should login successfully with standard_user credentials', async ({ page }) => {
-    await loginPage.login('standard_user', 'secret_sauce');
-    
-    // Verify redirect to inventory page
-    await expect(page).toHaveURL(/inventory/);
+  test('should login successfully with standard_user credentials', async () => {
+    const inventoryPage = await loginPage.login('standard_user', 'secret_sauce');
+    await inventoryPage.verifyPageTitle('Products');  
+
   });
 
   test('should display login form on initial load', async () => {
