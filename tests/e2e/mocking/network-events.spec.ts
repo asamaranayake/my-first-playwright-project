@@ -16,6 +16,55 @@ import { test, expect } from '@playwright/test';
 // ---------------------------------------------------------------------------
 
 test.describe('Network Events', () => {
+  test.only('capture browser console logs', async ({ page }) => {
+    const browserLogs: { type: string; text: string }[] = [];
+
+    page.on('console', (msg) => {
+      browserLogs.push({
+        type: msg.type(),
+        text: msg.text(),
+      });
+    });
+
+    page.on('pageerror', (err) => {
+      browserLogs.push({
+        type: 'error',
+        text: err.message,
+      });
+    });
+
+    await page.goto('https://demo.playwright.dev/api-mocking');
+
+    await page.evaluate(() => {
+      console.log('PW_CONSOLE_LOG: hello');
+      console.warn('PW_CONSOLE_WARN: check warning');
+      console.error('PW_CONSOLE_ERROR: check error');
+    });
+
+    expect(
+      browserLogs.some(
+        (entry) =>
+          entry.type === 'log' && entry.text.includes('PW_CONSOLE_LOG: hello'),
+      ),
+    ).toBe(true);
+
+    expect(
+      browserLogs.some(
+        (entry) =>
+          entry.type === 'warning' &&
+          entry.text.includes('PW_CONSOLE_WARN: check warning'),
+      ),
+    ).toBe(true);
+
+    expect(
+      browserLogs.some(
+        (entry) =>
+          entry.type === 'error' &&
+          entry.text.includes('PW_CONSOLE_ERROR: check error'),
+      ),
+    ).toBe(true);
+  });
+
   test('log all outgoing requests during navigation', async ({ page }) => {
     const requestUrls: string[] = [];
 
@@ -24,7 +73,8 @@ test.describe('Network Events', () => {
     });
 
     await page.goto('https://demo.playwright.dev/api-mocking');
-
+    console.log('All outgoing requests during navigation:');
+    console.log(requestUrls.join('\n'));
     // We should have captured at least the document request
     console.log(`Captured ${requestUrls.length} request(s)`);
     expect(requestUrls.length).toBeGreaterThan(0);
