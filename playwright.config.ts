@@ -66,6 +66,12 @@ export default defineConfig({
       testMatch: /.*user\.setup\.ts/,
     },
 
+    {
+      name: 'bank-user-setup',
+      testMatch: /.*bank\.setup\.ts/,
+
+    },
+
     // ──────────────────────────────────────────────
     // TEST PROJECTS: Use saved auth state
     // ──────────────────────────────────────────────
@@ -103,6 +109,15 @@ export default defineConfig({
       testMatch: /.*login.*\.spec\.ts/,
     },
 
+    // API tests — runs request-based examples such as GraphQL and gRPC samples
+    {
+      name: 'api-tests',
+      use: {
+        ...devices['Desktop Chrome'],
+      },
+      testMatch: /.*api.*\.spec\.ts/,
+    },
+
     // Multi-role tests — depend on BOTH setups
     {
       name: 'multi-role-tests',
@@ -111,6 +126,16 @@ export default defineConfig({
       },
       dependencies: ['admin-setup', 'user-setup'],
       testMatch: /.*multi-role.*\.spec\.ts/,
+    },
+
+    // Bank user tests — uses bank-admin.json auth state
+    {
+      name: 'bank-user-tests',
+      use: {
+        ...devices['Desktop Chrome']
+      },
+      dependencies: ['bank-user-setup'],
+      testMatch: /.*bank-user.*\.spec\.ts/,
     },
   ],
 });

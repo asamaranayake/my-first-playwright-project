@@ -19,7 +19,7 @@ test.describe('Admin User - Inventory Tests', () => {
     await page.goto('/inventory.html');
   });
 
-  test('admin can view products page', async ({ page }) => {
+  test('@regression admin can view products page', async ({ page }) => {
     // Verify the products page loaded (already authenticated!)
     await expect(page.locator('.title')).toHaveText('Products');
   });
