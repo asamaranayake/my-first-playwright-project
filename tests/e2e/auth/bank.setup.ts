@@ -1,5 +1,5 @@
 import { test as setup, expect } from '@playwright/test';
-import { BankLoginPage } from '../../../src/pages/bank-auth/bankLoginPage';
+import { BankLoginPage } from '../../../src/pages/bank-auth/BankLoginPage';
 
 
 setup('authenticate as bank admin user', async ({ page }) => {
@@ -12,7 +12,7 @@ setup('authenticate as bank admin user', async ({ page }) => {
     await bankLoginPage.waitForPageLoad();
 
     // Step 2: Fill in bank admin credentials
-    await bankLoginPage.login('akila', '123456');
+    await bankLoginPage.login('testAutomationOne', 'test@123');
 
     // Step 3: Wait for successful navigation to the bank dashboard
     await bankLoginPage.waitForUrl('**/dashboard');

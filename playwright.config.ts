@@ -132,7 +132,18 @@ export default defineConfig({
     {
       name: 'bank-user-tests',
       use: {
-        ...devices['Desktop Chrome']
+        ...devices['Desktop Chrome'],
+        storageState: 'playwright/.auth/bank-user.json',
+      },
+      dependencies: ['bank-user-setup'],
+      testMatch: /.*bank-user.*\.spec\.ts/,
+    },
+    // Bank user tests — uses bank-admin.json auth state
+    {
+      name: 'bank-admin-use-tests',
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: 'playwright/.auth/bank-admin.json',
       },
       dependencies: ['bank-user-setup'],
       testMatch: /.*bank-user.*\.spec\.ts/,
